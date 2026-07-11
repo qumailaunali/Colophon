@@ -17,7 +17,7 @@ const COLLAPSED_STORAGE_KEY = "colophon-sidebar-collapsed";
 export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { bookTitle, entries, currentSpineIndex, onSelect } = useSidebarToc();
+  const { bookTitle, entries, currentSpineIndex, onSelect, hidden } = useSidebarToc();
   const [open, setOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [email, setEmail] = useState<string | null>(null);
@@ -49,6 +49,8 @@ export function Sidebar() {
     router.push("/login");
     router.refresh();
   }
+
+  if (hidden) return null;
 
   return (
     <>

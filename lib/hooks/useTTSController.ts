@@ -13,6 +13,13 @@ interface UseTTSControllerArgs {
   onChapterEnd: () => void;
 }
 
+/** Scene-break markers and stray punctuation ("-", "—", "***", "•••") have
+ * nothing worth speaking and some TTS engines reject them outright — only
+ * bother calling the provider if there's at least one letter or digit. */
+function hasSpeakableContent(text: string): boolean {
+  return /[\p{L}\p{N}]/u.test(text);
+}
+
 /**
  * Drives sentence-by-sentence read-aloud against whichever TTSProvider
  * matches settings.ttsProvider (free Web Speech or premium Azure). Pause/
@@ -65,6 +72,13 @@ export function useTTSController({ settings, onSentenceChange, onChapterEnd }: U
     }
 
     onSentenceChange(chapter.spineIndex, sentence.index);
+
+    if (!hasSpeakableContent(sentence.text)) {
+      sentenceIndexRef.current += 1;
+      speakCurrentImpl();
+      return;
+    }
+
     providerRef.current.speak(
       sentence.text,
       {

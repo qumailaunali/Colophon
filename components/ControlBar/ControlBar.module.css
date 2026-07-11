@@ -95,6 +95,28 @@
   }
 }
 
+@media (max-width: 640px) {
+  .bar {
+    padding: 8px 10px;
+    gap: 8px;
+  }
+
+  .iconButton {
+    width: 30px;
+    height: 30px;
+    font-size: 0.8rem;
+  }
+
+  .playButton {
+    width: 38px;
+    height: 38px;
+  }
+
+  .sleepGroup {
+    font-size: 0.62rem;
+  }
+}
+
 .overlay {
   position: fixed;
   inset: 0;

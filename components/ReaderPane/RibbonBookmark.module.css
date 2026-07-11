@@ -8,6 +8,13 @@
   z-index: 6;
 }
 
+@media (max-width: 640px) {
+  .ribbonTrack {
+    right: 8px;
+    width: 18px;
+  }
+}
+
 .ribbon {
   position: absolute;
   top: 0;

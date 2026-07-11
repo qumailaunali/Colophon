@@ -66,6 +66,29 @@
   gap: 12px;
 }
 
+.readerAreaFocus {
+  padding: 10px 16px;
+}
+
+.exitFocusButton {
+  position: fixed;
+  top: 14px;
+  right: 14px;
+  z-index: 50;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(21, 37, 64, 0.85);
+  color: var(--color-paper);
+  border: 1px solid rgba(243, 238, 224, 0.25);
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.exitFocusButton:hover {
+  background: var(--color-navy);
+}
+
 .paginationRow {
   display: flex;
   align-items: center;
@@ -198,4 +221,57 @@
   text-transform: uppercase;
   font-weight: 600;
   cursor: pointer;
+}
+
+/* Leave room for the fixed hamburger button (Sidebar) that overlaps this
+ * bar's left edge once the sidebar becomes an off-canvas drawer. */
+@media (max-width: 900px) {
+  .topBar {
+    padding-left: 60px;
+  }
+}
+
+/* Reclaim as much of the screen as possible for the actual page content on
+ * phone-width viewports: tighter chrome, smaller side turn-buttons (swipe
+ * already pages the reader on touch devices). */
+@media (max-width: 640px) {
+  .topBar {
+    padding: 10px 12px 10px 56px;
+    gap: 8px;
+    font-size: 0.72rem;
+  }
+
+  .bookTitle {
+    font-size: 0.9rem;
+  }
+
+  .topActions {
+    gap: 4px;
+  }
+
+  .topActions button,
+  .topActions a {
+    padding: 6px 8px;
+    font-size: 0.64rem;
+  }
+
+  .readerArea {
+    padding: 8px 10px;
+    gap: 8px;
+  }
+
+  .paginationRow {
+    gap: 6px;
+  }
+
+  .turnButton {
+    width: 26px;
+    height: 48px;
+    font-size: 0.9rem;
+  }
+
+  .readerPaneWrap {
+    min-width: 220px;
+    min-height: 280px;
+  }
 }

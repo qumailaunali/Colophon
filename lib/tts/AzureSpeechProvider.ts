@@ -1,5 +1,20 @@
 import type { TTSProvider, TTSSpeakCallbacks, TTSUtteranceOptions, TTSVoice } from "./TTSProvider";
 
+function mediaErrorName(code: number | undefined): string {
+  switch (code) {
+    case 1:
+      return "ABORTED";
+    case 2:
+      return "NETWORK";
+    case 3:
+      return "DECODE";
+    case 4:
+      return "SRC_NOT_SUPPORTED";
+    default:
+      return "UNKNOWN";
+  }
+}
+
 /**
  * Premium provider backed by Azure Cognitive Services Speech, calling our
  * own /api/tts/azure routes (never the Azure key) so the subscription key
@@ -32,7 +47,25 @@ export class AzureSpeechProvider implements TTSProvider {
     const controller = new AbortController();
     this.abortController = controller;
 
-    (async () => {
+    this.attemptSpeak(text, options, controller, 1)
+      .then(() => callbacks.onEnd())
+      .catch((error) => {
+        if (controller.signal.aborted) return;
+        callbacks.onError(error);
+      });
+  }
+
+  /** Fetches + plays once; on any failure (bad response, empty/corrupt
+   * audio, decode error) retries the whole round-trip `retriesLeft` more
+   * times before giving up, to smooth over transient network hiccups
+   * between this server and Azure. */
+  private async attemptSpeak(
+    text: string,
+    options: TTSUtteranceOptions,
+    controller: AbortController,
+    retriesLeft: number
+  ): Promise<void> {
+    try {
       const res = await fetch("/api/tts/azure", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -50,33 +83,39 @@ export class AzureSpeechProvider implements TTSProvider {
       }
 
       const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      this.objectUrl = url;
+      if (blob.size === 0) {
+        throw new Error("Azure returned an empty audio response");
+      }
 
-      const audio = new Audio(url);
-      audio.playbackRate = options.rate;
-      audio.volume = Math.min(1, Math.max(0, options.volume));
-      this.audio = audio;
-      audio.onended = () => callbacks.onEnd();
-      audio.onerror = () => {
-        const code = audio.error?.code;
-        const codeName =
-          code === 1
-            ? "ABORTED"
-            : code === 2
-              ? "NETWORK"
-              : code === 3
-                ? "DECODE"
-                : code === 4
-                  ? "SRC_NOT_SUPPORTED"
-                  : "UNKNOWN";
-        callbacks.onError(new Error(`Azure audio playback failed (${codeName})`));
-      };
-      await audio.play();
-    })().catch((error) => {
-      if (controller.signal.aborted) return;
-      callbacks.onError(error);
-    });
+      const url = URL.createObjectURL(blob);
+
+      await new Promise<void>((resolve, reject) => {
+        const audio = new Audio(url);
+        audio.playbackRate = options.rate;
+        audio.volume = Math.min(1, Math.max(0, options.volume));
+        this.audio = audio;
+        this.objectUrl = url;
+
+        audio.onended = () => resolve();
+        audio.onerror = () => {
+          reject(new Error(`Azure audio playback failed (${mediaErrorName(audio.error?.code)})`));
+        };
+        audio.play().catch(reject);
+      });
+    } catch (error) {
+      if (this.objectUrl) {
+        URL.revokeObjectURL(this.objectUrl);
+        this.objectUrl = null;
+      }
+      this.audio = null;
+
+      if (controller.signal.aborted) throw error;
+      if (retriesLeft > 0) {
+        console.warn("[Azure TTS] retrying after error:", error);
+        return this.attemptSpeak(text, options, controller, retriesLeft - 1);
+      }
+      throw error;
+    }
   }
 
   private cleanup(): void {

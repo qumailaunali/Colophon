@@ -44,6 +44,8 @@ export default function BookReaderPage() {
   const [showSettings, setShowSettings] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
   const [pageInfo, setPageInfo] = useState({ page: 0, pageCount: 1 });
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [focusMode, setFocusMode] = useState(false);
 
   const readerPaneRef = useRef<ReaderPaneHandle>(null);
   const appliedInitialPositionRef = useRef(false);
@@ -51,7 +53,7 @@ export default function BookReaderPage() {
 
   const { progress, loaded: progressLoaded, updateProgress } = useReadingProgress(bookId);
   const { settings, loaded: settingsLoaded, updateSettings } = useReaderSettings();
-  const { setToc, clearToc } = useSidebarToc();
+  const { setToc, clearToc, setHidden: setSidebarHidden } = useSidebarToc();
 
   function handleSentenceChange(spineIndex: number, sentenceIndex: number) {
     setCurrentSentenceIndex(sentenceIndex);
@@ -86,6 +88,29 @@ export default function BookReaderPage() {
     mq.addEventListener("change", handler);
     return () => mq.removeEventListener("change", handler);
   }, []);
+
+  useEffect(() => {
+    function handleFullscreenChange() {
+      setIsFullscreen(!!document.fullscreenElement);
+    }
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    return () => document.removeEventListener("fullscreenchange", handleFullscreenChange);
+  }, []);
+
+  async function toggleFullscreen() {
+    if (document.fullscreenElement) {
+      await document.exitFullscreen().catch(() => {});
+    } else if (document.documentElement.requestFullscreen) {
+      await document.documentElement.requestFullscreen().catch(() => {});
+    }
+  }
+
+  // Focus mode: hides the nav sidebar and the control bar, leaving only the
+  // reading pane. Independent of browser fullscreen — can be combined with
+  // it or used on its own.
+  useEffect(() => {
+    setSidebarHidden(focusMode);
+  }, [focusMode, setSidebarHidden]);
 
   async function loadBook() {
     setLoadState("loading");
@@ -269,19 +294,38 @@ export default function BookReaderPage() {
 
   return (
     <div className={styles.bookPage}>
-      <div className={styles.topBar}>
-        <Link href="/library" className={styles.backLink}>
-          ‹ Library
-        </Link>
-        <div className={styles.bookTitle}>{book.title}</div>
-        <div className={styles.topActions}>
-          <button onClick={() => setShowSearch(true)}>Search</button>
-          <Link href={`/book/${book.id}/highlights`}>Highlights</Link>
-          <button onClick={() => setShowSettings(true)}>Aa</button>
+      {!focusMode && (
+        <div className={styles.topBar}>
+          <Link href="/library" className={styles.backLink}>
+            ‹ Library
+          </Link>
+          <div className={styles.bookTitle}>{book.title}</div>
+          <div className={styles.topActions}>
+            <button onClick={() => setShowSearch(true)}>Search</button>
+            <Link href={`/book/${book.id}/highlights`}>Highlights</Link>
+            <button onClick={() => setShowSettings(true)}>Aa</button>
+            <button onClick={toggleFullscreen} aria-label="Toggle fullscreen" title="Toggle fullscreen">
+              {isFullscreen ? "⤡" : "⛶"}
+            </button>
+            <button onClick={() => setFocusMode(true)} aria-label="Focus mode" title="Focus mode: hide sidebar and controls">
+              Focus
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
-      <div className={styles.readerArea}>
+      {focusMode && (
+        <button
+          className={styles.exitFocusButton}
+          onClick={() => setFocusMode(false)}
+          aria-label="Exit focus mode"
+          title="Exit focus mode"
+        >
+          ✕
+        </button>
+      )}
+
+      <div className={`${styles.readerArea} ${focusMode ? styles.readerAreaFocus : ""}`}>
         {ttsController.lastError && (
           <div className={styles.ttsErrorBanner}>
             <span>Read-aloud error: {ttsController.lastError}</span>
@@ -343,32 +387,34 @@ export default function BookReaderPage() {
         )}
       </div>
 
-      <ControlBar
-        isPlaying={ttsController.isPlaying}
-        onTogglePlay={ttsController.togglePlayPause}
-        onStop={ttsController.stop}
-        onPrevChapter={() => {
-          ttsController.pause();
-          navigateToChapter(currentSpineIndex - 1, 0);
-        }}
-        onNextChapter={() => {
-          ttsController.pause();
-          navigateToChapter(currentSpineIndex + 1, 0);
-        }}
-        ttsProvider={settings.ttsProvider}
-        onTtsProviderChange={(kind) => updateSettings({ ttsProvider: kind, voiceName: null })}
-        voices={ttsController.voices}
-        voiceName={settings.voiceName}
-        onVoiceChange={(name) => updateSettings({ voiceName: name || null })}
-        speechRate={settings.speechRate}
-        onRateChange={(rate) => updateSettings({ speechRate: rate })}
-        speechPitch={settings.speechPitch}
-        onPitchChange={(pitch) => updateSettings({ speechPitch: pitch })}
-        speechVolume={settings.speechVolume}
-        onVolumeChange={(volume) => updateSettings({ speechVolume: volume })}
-        sleepMinutesRemaining={sleepTimer.minutesRemaining}
-        onSetSleepTimer={(minutes) => (minutes ? sleepTimer.start(minutes) : sleepTimer.cancel())}
-      />
+      {!focusMode && (
+        <ControlBar
+          isPlaying={ttsController.isPlaying}
+          onTogglePlay={ttsController.togglePlayPause}
+          onStop={ttsController.stop}
+          onPrevChapter={() => {
+            ttsController.pause();
+            navigateToChapter(currentSpineIndex - 1, 0);
+          }}
+          onNextChapter={() => {
+            ttsController.pause();
+            navigateToChapter(currentSpineIndex + 1, 0);
+          }}
+          ttsProvider={settings.ttsProvider}
+          onTtsProviderChange={(kind) => updateSettings({ ttsProvider: kind, voiceName: null })}
+          voices={ttsController.voices}
+          voiceName={settings.voiceName}
+          onVoiceChange={(name) => updateSettings({ voiceName: name || null })}
+          speechRate={settings.speechRate}
+          onRateChange={(rate) => updateSettings({ speechRate: rate })}
+          speechPitch={settings.speechPitch}
+          onPitchChange={(pitch) => updateSettings({ speechPitch: pitch })}
+          speechVolume={settings.speechVolume}
+          onVolumeChange={(volume) => updateSettings({ speechVolume: volume })}
+          sleepMinutesRemaining={sleepTimer.minutesRemaining}
+          onSetSleepTimer={(minutes) => (minutes ? sleepTimer.start(minutes) : sleepTimer.cancel())}
+        />
+      )}
 
       {showSettings && (
         <div className={styles.settingsOverlay} onClick={() => setShowSettings(false)}>

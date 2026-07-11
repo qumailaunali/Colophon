@@ -55,9 +55,14 @@ export async function POST(request: Request) {
   }
 
   const audio = await azureRes.arrayBuffer();
+  if (audio.byteLength === 0) {
+    return NextResponse.json({ error: "Azure returned an empty audio response" }, { status: 502 });
+  }
+
   return new NextResponse(audio, {
     headers: {
       "Content-Type": "audio/mpeg",
+      "Content-Length": String(audio.byteLength),
       "Cache-Control": "no-store",
     },
   });

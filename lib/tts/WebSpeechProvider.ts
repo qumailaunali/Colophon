@@ -4,7 +4,9 @@ export class WebSpeechProvider implements TTSProvider {
   async listVoices(): Promise<TTSVoice[]> {
     const synth = window.speechSynthesis;
     const toVoices = (voices: SpeechSynthesisVoice[]) =>
-      voices.map((v) => ({ name: v.name, lang: v.lang }));
+      voices
+        .filter((v) => v.lang.toLowerCase().startsWith("en"))
+        .map((v) => ({ name: v.name, lang: v.lang }));
 
     const existing = synth.getVoices();
     if (existing.length > 0) return toVoices(existing);

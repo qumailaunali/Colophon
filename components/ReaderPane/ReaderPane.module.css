@@ -10,6 +10,12 @@
   box-shadow: var(--shadow-card);
 }
 
+@media (max-width: 640px) {
+  .viewport {
+    padding: 20px 40px 20px 18px;
+  }
+}
+
 .columns {
   /*
    * No padding here on purpose: CSS multicol padding is applied once to the
