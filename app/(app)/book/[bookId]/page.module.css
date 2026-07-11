@@ -1,0 +1,201 @@
+.bookPage {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+}
+
+.topBar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 24px;
+  background: var(--color-navy-dark);
+  color: var(--color-paper);
+  font-family: var(--font-ui);
+  font-size: 0.8rem;
+}
+
+.backLink {
+  color: rgba(243, 238, 224, 0.75);
+  white-space: nowrap;
+}
+
+.backLink:hover {
+  color: var(--color-paper);
+}
+
+.bookTitle {
+  flex: 1;
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.topActions {
+  display: flex;
+  gap: 8px;
+}
+
+.topActions button,
+.topActions a {
+  background: rgba(243, 238, 224, 0.08);
+  border: 1px solid rgba(243, 238, 224, 0.18);
+  color: var(--color-paper);
+  border-radius: var(--radius-sm);
+  padding: 7px 12px;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.topActions button:hover,
+.topActions a:hover {
+  background: rgba(243, 238, 224, 0.16);
+}
+
+.readerArea {
+  flex: 1;
+  min-height: 0;
+  padding: 20px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.paginationRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  flex: 1;
+  min-height: 0;
+}
+
+.turnButton {
+  background: rgba(243, 238, 224, 0.9);
+  border: none;
+  color: var(--color-ink);
+  width: 40px;
+  height: 64px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.turnButton:hover {
+  background: var(--color-paper);
+}
+
+.turnButton:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.readerPaneWrap {
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  min-width: 320px;
+  min-height: 360px;
+  resize: both;
+  overflow: hidden;
+}
+
+.progressRow {
+  padding: 0 4px;
+}
+
+.ttsErrorBanner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: rgba(140, 47, 57, 0.16);
+  border: 1px solid var(--color-ribbon);
+  color: var(--color-paper);
+  border-radius: var(--radius-sm);
+  padding: 8px 14px;
+  font-family: var(--font-ui);
+  font-size: 0.78rem;
+}
+
+.ttsErrorBanner button {
+  background: none;
+  border: none;
+  color: var(--color-paper);
+  cursor: pointer;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+.centerState {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-paper);
+  font-family: var(--font-ui);
+  flex-direction: column;
+  gap: 12px;
+  text-align: center;
+  padding: 40px;
+}
+
+.retryButton {
+  background: var(--color-gold);
+  color: var(--color-ink);
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 10px 18px;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.settingsOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(21, 37, 64, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 60;
+  padding: 20px;
+}
+
+.settingsCard {
+  background: var(--color-paper);
+  color: var(--color-ink);
+  border-radius: var(--radius-lg);
+  border-top: 6px solid var(--color-gold);
+  padding: 26px;
+  width: 100%;
+  max-width: 360px;
+  box-shadow: var(--shadow-card);
+}
+
+.settingsCard h2 {
+  font-size: 1.2rem;
+  margin-bottom: 18px;
+}
+
+.settingsClose {
+  margin-top: 20px;
+  width: 100%;
+  background: var(--color-gold);
+  color: var(--color-ink);
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 10px;
+  font-family: var(--font-ui);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  font-weight: 600;
+  cursor: pointer;
+}

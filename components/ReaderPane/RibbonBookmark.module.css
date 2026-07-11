@@ -1,0 +1,26 @@
+.ribbonTrack {
+  position: absolute;
+  top: 0;
+  right: 18px;
+  width: 26px;
+  height: 100%;
+  pointer-events: none;
+  z-index: 6;
+}
+
+.ribbon {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  background: linear-gradient(180deg, var(--color-gold) 0%, var(--color-ribbon) 55%, var(--color-ribbon-dark) 100%);
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% calc(100% - 16px), 0 100%);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+  transition: height 0.4s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ribbon {
+    transition: none;
+  }
+}

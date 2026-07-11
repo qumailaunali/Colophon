@@ -1,0 +1,42 @@
+.wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-family: var(--font-ui);
+}
+
+.bar {
+  height: 5px;
+  border-radius: 3px;
+  background: rgba(91, 81, 64, 0.2);
+  overflow: hidden;
+}
+
+.onDark .bar {
+  background: rgba(243, 238, 224, 0.18);
+}
+
+.fill {
+  height: 100%;
+  background: var(--color-gold);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.meta {
+  display: flex;
+  gap: 10px;
+  font-size: 0.68rem;
+  letter-spacing: 0.02em;
+  color: var(--color-ink-soft);
+  flex-wrap: wrap;
+}
+
+.onDark .meta {
+  color: rgba(243, 238, 224, 0.7);
+}
+
+.compact .meta {
+  font-size: 0.62rem;
+  gap: 8px;
+}

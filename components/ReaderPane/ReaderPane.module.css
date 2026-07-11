@@ -1,0 +1,67 @@
+.viewport {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
+  padding: 48px 72px 48px 44px;
+  perspective: 1600px;
+  border-radius: var(--radius-lg);
+  background: var(--reader-bg);
+  box-shadow: var(--shadow-card);
+}
+
+.columns {
+  /*
+   * No padding here on purpose: CSS multicol padding is applied once to the
+   * whole flowed box (only around the very first/last column), not per
+   * page, which throws off both the column-width value and the
+   * scrollWidth/pageWidth page-count math. Insetting the reading pane is
+   * done via .viewport's padding instead, so every column is an identical,
+   * unpadded pageWidth-wide slice.
+   */
+  position: relative;
+  height: 100%;
+  column-gap: 0;
+  color: var(--reader-fg);
+  font-family: var(--font-reading);
+  transition: transform 0.32s ease;
+  will-change: transform;
+}
+
+.columns img,
+.columns svg {
+  max-width: 100%;
+  height: auto;
+}
+
+.overlayHost {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  transform-style: preserve-3d;
+}
+
+.curlClone {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  overflow: hidden;
+  background: var(--reader-bg);
+  z-index: 5;
+  transform: rotateY(0deg);
+  box-shadow: none;
+  transition: transform 0.42s cubic-bezier(0.45, 0, 0.2, 1), box-shadow 0.42s ease;
+}
+
+.turningNext {
+  transform-origin: left center;
+  transform: rotateY(-98deg);
+  box-shadow: inset -60px 0 80px -30px rgba(0, 0, 0, 0.5);
+}
+
+.turningPrev {
+  transform-origin: right center;
+  transform: rotateY(98deg);
+  box-shadow: inset 60px 0 80px -30px rgba(0, 0, 0, 0.5);
+}

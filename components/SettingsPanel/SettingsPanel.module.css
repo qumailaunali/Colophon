@@ -1,0 +1,82 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  font-family: var(--font-ui);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-ink-soft);
+}
+
+.select {
+  border: 1px solid var(--color-paper-dark);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  font-size: 0.85rem;
+  background: #fff;
+  color: var(--color-ink);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.row input[type="range"] {
+  flex: 1;
+  accent-color: var(--color-gold);
+}
+
+.value {
+  font-size: 0.78rem;
+  color: var(--color-ink-soft);
+  min-width: 42px;
+  text-align: right;
+}
+
+.themeRow {
+  display: flex;
+  gap: 10px;
+}
+
+.themeSwatch {
+  flex: 1;
+  border-radius: var(--radius-sm);
+  border: 2px solid transparent;
+  padding: 14px 8px;
+  cursor: pointer;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  text-align: center;
+}
+
+.themeSwatchActive {
+  border-color: var(--color-gold);
+}
+
+.themePaper {
+  background: #f3eee0;
+  color: #211b14;
+}
+
+.themeSepia {
+  background: #efe0c0;
+  color: #3a2e1e;
+}
+
+.themeDark {
+  background: #1b1712;
+  color: #ede6d6;
+}

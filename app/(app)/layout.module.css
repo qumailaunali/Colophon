@@ -1,0 +1,11 @@
+.shell {
+  display: flex;
+  min-height: 100dvh;
+  background: var(--color-navy-dark);
+}
+
+.main {
+  flex: 1;
+  min-width: 0;
+  background: var(--color-navy-dark);
+}
