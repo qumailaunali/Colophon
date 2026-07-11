@@ -13,6 +13,17 @@ import { usePagination } from "@/lib/pagination/usePagination";
 import { RibbonBookmark } from "./RibbonBookmark";
 import styles from "./ReaderPane.module.css";
 
+// Deliberately far larger than any real viewport: with `column-width` this
+// oversized, the browser can never fit two columns side-by-side (it always
+// falls back to a single column spanning the full available width). Text
+// still overflows into additional same-width columns for later pages
+// exactly as before — this just makes "exactly one column per page"
+// structurally guaranteed instead of depending on our own JS-measured
+// width matching the browser's layout to the pixel, which could drift out
+// of sync (e.g. after a container resize) and show a sliver of the
+// adjacent page.
+const FORCE_SINGLE_COLUMN_WIDTH = 100000;
+
 export interface ReaderPaneHandle {
   /** Returns false if already at the last page (caller should advance chapter). */
   nextPage: () => boolean;
@@ -240,7 +251,7 @@ export const ReaderPane = forwardRef<ReaderPaneHandle, ReaderPaneProps>(function
         ref={columnsRef}
         className={styles.columns}
         style={{
-          columnWidth: pageWidth || undefined,
+          columnWidth: pageWidth > 0 ? FORCE_SINGLE_COLUMN_WIDTH : undefined,
           transform: `translateX(-${currentPage * pageWidth}px)`,
           fontSize: `${fontSize}px`,
           lineHeight: lineSpacing,

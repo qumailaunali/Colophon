@@ -315,14 +315,24 @@ export default function BookReaderPage() {
       )}
 
       {focusMode && (
-        <button
-          className={styles.exitFocusButton}
-          onClick={() => setFocusMode(false)}
-          aria-label="Exit focus mode"
-          title="Exit focus mode"
-        >
-          ✕
-        </button>
+        <>
+          <button
+            className={styles.exitFocusButton}
+            onClick={() => setFocusMode(false)}
+            aria-label="Exit focus mode"
+            title="Exit focus mode"
+          >
+            ✕
+          </button>
+          <button
+            className={styles.focusPlayButton}
+            onClick={ttsController.togglePlayPause}
+            aria-label={ttsController.isPlaying ? "Pause" : "Play"}
+            title={ttsController.isPlaying ? "Pause" : "Play"}
+          >
+            {ttsController.isPlaying ? "❚❚" : "▶"}
+          </button>
+        </>
       )}
 
       <div className={`${styles.readerArea} ${focusMode ? styles.readerAreaFocus : ""}`}>
@@ -335,14 +345,16 @@ export default function BookReaderPage() {
           </div>
         )}
         <div className={styles.paginationRow}>
-          <button
-            className={styles.turnButton}
-            onClick={handlePrevPage}
-            disabled={pageInfo.page === 0 && currentSpineIndex === 0}
-            aria-label="Previous page"
-          >
-            ‹
-          </button>
+          {!focusMode && (
+            <button
+              className={styles.turnButton}
+              onClick={handlePrevPage}
+              disabled={pageInfo.page === 0 && currentSpineIndex === 0}
+              aria-label="Previous page"
+            >
+              ‹
+            </button>
+          )}
           <div className={styles.readerPaneWrap}>
             {chapter && (
               <ReaderPane
@@ -362,16 +374,18 @@ export default function BookReaderPage() {
               />
             )}
           </div>
-          <button
-            className={styles.turnButton}
-            onClick={handleNextPage}
-            disabled={
-              pageInfo.page >= pageInfo.pageCount - 1 && currentSpineIndex >= chapters.length - 1
-            }
-            aria-label="Next page"
-          >
-            ›
-          </button>
+          {!focusMode && (
+            <button
+              className={styles.turnButton}
+              onClick={handleNextPage}
+              disabled={
+                pageInfo.page >= pageInfo.pageCount - 1 && currentSpineIndex >= chapters.length - 1
+              }
+              aria-label="Next page"
+            >
+              ›
+            </button>
+          )}
         </div>
 
         {summary && (
