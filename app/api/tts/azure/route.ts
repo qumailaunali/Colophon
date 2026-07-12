@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { buildSsml, DEFAULT_AZURE_VOICE } from "@/lib/tts/azureSsml";
+import dns from "dns";
+
+dns.setDefaultResultOrder("ipv4first");
 
 export async function POST(request: Request) {
   const supabase = await createServerClient();

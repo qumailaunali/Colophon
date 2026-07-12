@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
 import { createClient as createServerClient } from "@/lib/supabase/server";
+import dns from "dns";
+
+dns.setDefaultResultOrder("ipv4first");
 
 interface AzureVoiceEntry {
   ShortName: string;
