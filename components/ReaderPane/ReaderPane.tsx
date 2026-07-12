@@ -178,11 +178,13 @@ export const ReaderPane = forwardRef<ReaderPaneHandle, ReaderPaneProps>(function
   useEffect(() => {
     const columns = columnsRef.current;
     if (!columns) return;
-    const prev = columns.querySelector('[data-speaking="true"]');
-    prev?.removeAttribute("data-speaking");
+    columns.querySelectorAll('[data-speaking="true"]').forEach((el) => {
+      el.removeAttribute("data-speaking");
+    });
     if (currentSentenceIndex != null) {
-      const el = columns.querySelector(`[data-sentence-index="${currentSentenceIndex}"]`);
-      el?.setAttribute("data-speaking", "true");
+      columns.querySelectorAll(`[data-sentence-index="${currentSentenceIndex}"]`).forEach((el) => {
+        el.setAttribute("data-speaking", "true");
+      });
     }
   }, [currentSentenceIndex, html]);
 
@@ -196,11 +198,10 @@ export const ReaderPane = forwardRef<ReaderPaneHandle, ReaderPaneProps>(function
     });
     highlights.forEach((h) => {
       for (let i = h.sentence_index_start; i <= h.sentence_index_end; i++) {
-        const el = columns.querySelector<HTMLElement>(`[data-sentence-index="${i}"]`);
-        if (el) {
+        columns.querySelectorAll<HTMLElement>(`[data-sentence-index="${i}"]`).forEach((el) => {
           el.style.backgroundColor = `${h.color}55`;
           el.setAttribute("data-highlight-id", h.id);
-        }
+        });
       }
     });
   }, [html, highlights]);
@@ -247,23 +248,25 @@ export const ReaderPane = forwardRef<ReaderPaneHandle, ReaderPaneProps>(function
 
   return (
     <div ref={viewportRef} className={styles.viewport} data-reader-theme={theme}>
-      <div
-        ref={columnsRef}
-        className={styles.columns}
-        style={{
-          columnWidth: pageWidth > 0 ? FORCE_SINGLE_COLUMN_WIDTH : undefined,
-          transform: `translateX(-${currentPage * pageWidth}px)`,
-          fontSize: `${fontSize}px`,
-          lineHeight: lineSpacing,
-          fontFamily: fontFamily || undefined,
-        }}
-        onClick={handleClick}
-        onMouseUp={handleMouseUp}
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
-        dangerouslySetInnerHTML={{ __html: html }}
-      />
-      <div ref={overlayHostRef} className={styles.overlayHost} />
+      <div className={styles.clipContainer}>
+        <div
+          ref={columnsRef}
+          className={styles.columns}
+          style={{
+            columnWidth: pageWidth > 0 ? FORCE_SINGLE_COLUMN_WIDTH : undefined,
+            transform: `translateX(-${currentPage * pageWidth}px)`,
+            fontSize: `${fontSize}px`,
+            lineHeight: lineSpacing,
+            fontFamily: fontFamily || undefined,
+          }}
+          onClick={handleClick}
+          onMouseUp={handleMouseUp}
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+          dangerouslySetInnerHTML={{ __html: html }}
+        />
+        <div ref={overlayHostRef} className={styles.overlayHost} />
+      </div>
       <RibbonBookmark progress={pageCount > 0 ? (currentPage + 1) / pageCount : 0} />
     </div>
   );

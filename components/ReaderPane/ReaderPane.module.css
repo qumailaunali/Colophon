@@ -16,6 +16,14 @@
   }
 }
 
+.clipContainer {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  transform-style: preserve-3d;
+}
+
 .columns {
   /*
    * No padding here on purpose: CSS multicol padding is applied once to the

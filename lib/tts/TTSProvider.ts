@@ -24,6 +24,7 @@ export interface TTSSpeakCallbacks {
 export interface TTSProvider {
   listVoices(): Promise<TTSVoice[]>;
   speak(text: string, options: TTSUtteranceOptions, callbacks: TTSSpeakCallbacks): void;
+  prefetch?(text: string, options: TTSUtteranceOptions): void;
   pause(): void;
   resume(): void;
   stop(): void;

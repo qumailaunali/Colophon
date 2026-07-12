@@ -102,6 +102,24 @@ export function useTTSController({ settings, onSentenceChange, onChapterEnd }: U
         },
       }
     );
+
+    // Prefetch the next speakable sentence if the provider supports it
+    if (providerRef.current.prefetch) {
+      let nextIndex = sentenceIndexRef.current + 1;
+      let nextSentence = chapter.sentences.find((s) => s.index === nextIndex);
+      while (nextSentence && !hasSpeakableContent(nextSentence.text)) {
+        nextIndex += 1;
+        nextSentence = chapter.sentences.find((s) => s.index === nextIndex);
+      }
+      if (nextSentence) {
+        providerRef.current.prefetch(nextSentence.text, {
+          rate: settingsRef.current.speechRate,
+          pitch: settingsRef.current.speechPitch,
+          volume: settingsRef.current.speechVolume,
+          voiceName: settingsRef.current.voiceName,
+        });
+      }
+    }
   }, [onChapterEnd, onSentenceChange]);
 
   const setChapter = useCallback((chapter: EpubChapter, sentenceIndex = 0) => {
