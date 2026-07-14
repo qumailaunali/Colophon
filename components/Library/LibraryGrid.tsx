@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
 import { computeProgressSummary, estimateWordsIntoChapter } from "@/lib/reading/progressMath";
 import { ProgressIndicator } from "@/components/ProgressIndicator/ProgressIndicator";
 import type { BookRow, ReadingProgressRow } from "@/lib/supabase/types";
@@ -14,6 +15,20 @@ interface LibraryGridProps {
 }
 
 export function LibraryGrid({ books, progressByBook, coverUrls, onDelete }: LibraryGridProps) {
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const menuRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!openMenuId) return;
+    function handleClickOutside(event: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setOpenMenuId(null);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [openMenuId]);
+
   if (books.length === 0) {
     return (
       <div className={styles.empty}>
@@ -39,14 +54,44 @@ export function LibraryGrid({ books, progressByBook, coverUrls, onDelete }: Libr
 
         return (
           <div key={book.id} className={styles.card}>
-            <Link href={`/book/${book.id}`} className={styles.coverLink}>
-              {coverUrls[book.id] ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={coverUrls[book.id]} alt={book.title} className={styles.cover} />
-              ) : (
-                <div className={styles.coverPlaceholder}>{book.title[0]}</div>
-              )}
-            </Link>
+            <div className={styles.coverWrap}>
+              <Link href={`/book/${book.id}`} className={styles.coverLink}>
+                {coverUrls[book.id] ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={coverUrls[book.id]} alt={book.title} className={styles.cover} />
+                ) : (
+                  <div className={styles.coverPlaceholder}>{book.title[0]}</div>
+                )}
+              </Link>
+              <div
+                className={styles.menuContainer}
+                ref={openMenuId === book.id ? menuRef : null}
+              >
+                <button
+                  type="button"
+                  className={styles.menuButton}
+                  aria-label="Book options"
+                  aria-expanded={openMenuId === book.id}
+                  onClick={() => setOpenMenuId(openMenuId === book.id ? null : book.id)}
+                >
+                  ⋮
+                </button>
+                {openMenuId === book.id && (
+                  <div className={styles.menuDropdown}>
+                    <button
+                      type="button"
+                      className={styles.menuItem}
+                      onClick={() => {
+                        setOpenMenuId(null);
+                        onDelete(book.id);
+                      }}
+                    >
+                      Delete
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
             <div className={styles.info}>
               <Link href={`/book/${book.id}`} className={styles.title}>
                 {book.title}
@@ -59,9 +104,6 @@ export function LibraryGrid({ books, progressByBook, coverUrls, onDelete }: Libr
                 minutesRemaining={summary.minutesRemaining}
                 compact
               />
-              <button className={styles.deleteButton} onClick={() => onDelete(book.id)}>
-                Delete
-              </button>
             </div>
           </div>
         );

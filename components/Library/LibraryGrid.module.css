@@ -22,9 +22,67 @@
   flex-direction: column;
 }
 
+.coverWrap {
+  position: relative;
+}
+
 .coverLink {
   display: block;
   aspect-ratio: 2 / 3;
+  background: var(--color-paper-dark);
+}
+
+.menuContainer {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+}
+
+.menuButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: var(--radius-md);
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.menuButton:hover {
+  background: rgba(0, 0, 0, 0.75);
+}
+
+.menuDropdown {
+  position: absolute;
+  top: 30px;
+  right: 0;
+  min-width: 110px;
+  background: var(--color-paper);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+  z-index: 10;
+}
+
+.menuItem {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  color: var(--color-ribbon);
+  font-family: var(--font-ui);
+  font-size: 0.78rem;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.menuItem:hover {
   background: var(--color-paper-dark);
 }
 
@@ -66,20 +124,3 @@
   color: var(--color-ink-soft);
 }
 
-.deleteButton {
-  align-self: flex-start;
-  margin-top: 4px;
-  background: none;
-  border: none;
-  color: var(--color-ribbon);
-  font-family: var(--font-ui);
-  font-size: 0.68rem;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  cursor: pointer;
-  padding: 0;
-}
-
-.deleteButton:hover {
-  text-decoration: underline;
-}

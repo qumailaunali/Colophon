@@ -104,6 +104,10 @@
   font-weight: 600;
 }
 
+.spacer {
+  flex: 1;
+}
+
 .tocSection {
   flex: 1;
   overflow-y: auto;

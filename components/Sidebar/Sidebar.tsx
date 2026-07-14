@@ -99,7 +99,7 @@ export function Sidebar() {
           ))}
         </nav>
 
-        {entries.length > 0 && (
+        {entries.length > 0 ? (
           <div className={`${styles.tocSection} ${styles.hideWhenCollapsed}`}>
             <div className={styles.tocTitle}>{bookTitle ?? "Contents"}</div>
             {entries.map((entry, index) => (
@@ -114,6 +114,8 @@ export function Sidebar() {
               </button>
             ))}
           </div>
+        ) : (
+          <div className={styles.spacer} />
         )}
 
         <div className={`${styles.footer} ${styles.hideWhenCollapsed}`}>
