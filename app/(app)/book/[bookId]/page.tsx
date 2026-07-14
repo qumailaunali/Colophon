@@ -366,7 +366,7 @@ export default function BookReaderPage() {
               aria-label={isCurrentPageBookmarked ? "Remove bookmark" : "Bookmark current page"}
               title={isCurrentPageBookmarked ? "Remove bookmark" : "Bookmark current page"}
             >
-              {isCurrentPageBookmarked ? "★ Bookmarked" : "☆ Bookmark"}
+              {isCurrentPageBookmarked ? "★" : "☆"}
             </button>
             <button onClick={() => setShowSettings(true)}>Aa</button>
             <button onClick={toggleFullscreen} aria-label="Toggle fullscreen" title="Toggle fullscreen">
