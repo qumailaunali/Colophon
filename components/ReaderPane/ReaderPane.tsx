@@ -33,6 +33,7 @@ export interface ReaderPaneHandle {
   goToSentencePage: (sentenceIndex: number) => void;
   getPageCount: () => number;
   getCurrentPage: () => number;
+  getFirstSentenceOnPage: () => number;
 }
 
 export interface SelectionCommit {
@@ -170,8 +171,21 @@ export const ReaderPane = forwardRef<ReaderPaneHandle, ReaderPaneProps>(function
       },
       getPageCount: () => pageCountRef.current,
       getCurrentPage: () => currentPageRef.current,
+      getFirstSentenceOnPage: () => {
+        const columns = columnsRef.current;
+        if (!columns || pageWidth === 0) return 0;
+        const els = columns.querySelectorAll<HTMLElement>("[data-sentence-index]");
+        for (let i = 0; i < els.length; i++) {
+          const el = els[i];
+          const page = Math.floor(el.offsetLeft / pageWidth);
+          if (page === currentPageRef.current) {
+            return Number(el.getAttribute("data-sentence-index"));
+          }
+        }
+        return 0;
+      },
     }),
-    [animateTurn, getSentencePage, setPage]
+    [animateTurn, getSentencePage, setPage, pageWidth]
   );
 
   // Toggle the currently-spoken sentence highlight.

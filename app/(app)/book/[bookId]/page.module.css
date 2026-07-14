@@ -297,3 +297,10 @@
     min-height: 280px;
   }
 }
+
+.bookmarkActive {
+  background: rgba(201, 162, 39, 0.22) !important;
+  border-color: var(--color-gold) !important;
+  color: var(--color-gold) !important;
+}
+

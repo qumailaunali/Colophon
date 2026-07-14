@@ -50,6 +50,18 @@ export type HighlightRow = {
   created_at: string;
 };
 
+export type BookmarkRow = {
+  id: string;
+  user_id: string;
+  book_id: string;
+  spine_index: number;
+  sentence_index: number;
+  scroll_or_page_offset: number;
+  page_info: string;
+  created_at: string;
+};
+
+
 export type ReaderSettingsRow = {
   id: string;
   user_id: string;
@@ -87,6 +99,12 @@ export type Database = {
         Row: HighlightRow;
         Insert: Omit<HighlightRow, "id" | "created_at"> & { id?: string };
         Update: Partial<Omit<HighlightRow, "id" | "user_id" | "book_id">>;
+        Relationships: [];
+      };
+      bookmarks: {
+        Row: BookmarkRow;
+        Insert: Omit<BookmarkRow, "id" | "created_at"> & { id?: string };
+        Update: Partial<Omit<BookmarkRow, "id" | "user_id" | "book_id">>;
         Relationships: [];
       };
       reader_settings: {

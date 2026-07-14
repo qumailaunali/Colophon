@@ -6,7 +6,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { parseEpub } from "@/lib/epub/parser";
 import type { EpubChapter } from "@/lib/epub/types";
-import type { BookRow, HighlightRow } from "@/lib/supabase/types";
+import type { BookRow, HighlightRow, BookmarkRow } from "@/lib/supabase/types";
 import { useReadingProgress } from "@/lib/hooks/useReadingProgress";
 import { useReaderSettings } from "@/lib/hooks/useReaderSettings";
 import { useTTSController } from "@/lib/hooks/useTTSController";
@@ -39,13 +39,21 @@ export default function BookReaderPage() {
   const [currentSpineIndex, setCurrentSpineIndex] = useState(0);
   const [currentSentenceIndex, setCurrentSentenceIndex] = useState<number | null>(null);
   const [highlights, setHighlights] = useState<HighlightRow[]>([]);
+  const [bookmarks, setBookmarks] = useState<BookmarkRow[]>([]);
   const [pendingSelection, setPendingSelection] = useState<SelectionCommit | null>(null);
+
   const [showSearch, setShowSearch] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
   const [pageInfo, setPageInfo] = useState({ page: 0, pageCount: 1 });
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [focusMode, setFocusMode] = useState(false);
+
+  const isCurrentPageBookmarked = useMemo(() => {
+    return bookmarks.some(
+      (b) => b.spine_index === currentSpineIndex && b.scroll_or_page_offset === pageInfo.page
+    );
+  }, [bookmarks, currentSpineIndex, pageInfo.page]);
 
   const readerPaneRef = useRef<ReaderPaneHandle>(null);
   const appliedInitialPositionRef = useRef(false);
@@ -136,9 +144,15 @@ export default function BookReaderPage() {
         .select("*")
         .eq("book_id", bookId);
 
+      const { data: bookmarkRows } = await supabase
+        .from("bookmarks")
+        .select("*")
+        .eq("book_id", bookId);
+
       setBook(bookRow);
       setChapters(parsed.chapters);
       setHighlights(highlightRows ?? []);
+      setBookmarks(bookmarkRows ?? []);
       setLoadState("ready");
     } catch (e) {
       setErrorMessage(e instanceof Error ? e.message : "Something went wrong loading this book.");
@@ -259,6 +273,48 @@ export default function BookReaderPage() {
     setPendingSelection(null);
   }
 
+  async function toggleBookmark() {
+    if (!book) return;
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const pageIndex = pageInfo.page;
+    const existing = bookmarks.find(
+      (b) => b.spine_index === currentSpineIndex && b.scroll_or_page_offset === pageIndex
+    );
+
+    if (existing) {
+      const { error } = await supabase.from("bookmarks").delete().eq("id", existing.id);
+      if (!error) {
+        setBookmarks((prev) => prev.filter((b) => b.id !== existing.id));
+      }
+    } else {
+      const sentenceIndex = readerPaneRef.current?.getFirstSentenceOnPage() ?? currentSentenceIndex ?? 0;
+      const chapter = chapters[currentSpineIndex];
+      const pageLabel = `${chapter.title || `Chapter ${currentSpineIndex + 1}`} - Page ${pageIndex + 1} of ${pageInfo.pageCount}`;
+
+      const { data, error } = await supabase
+        .from("bookmarks")
+        .insert({
+          user_id: user.id,
+          book_id: book.id,
+          spine_index: currentSpineIndex,
+          sentence_index: sentenceIndex,
+          scroll_or_page_offset: pageIndex,
+          page_info: pageLabel,
+        })
+        .select()
+        .single();
+
+      if (!error && data) {
+        setBookmarks((prev) => [...prev, data]);
+      }
+    }
+  }
+
   const chapterWordCounts = useMemo(() => chapters.map((c) => chapterWordCount(c)), [chapters]);
 
   const summary = useMemo(() => {
@@ -303,6 +359,15 @@ export default function BookReaderPage() {
           <div className={styles.topActions}>
             <button onClick={() => setShowSearch(true)}>Search</button>
             <Link href={`/book/${book.id}/highlights`}>Highlights</Link>
+            <Link href={`/book/${book.id}/bookmarks`}>Bookmarks</Link>
+            <button
+              onClick={toggleBookmark}
+              className={isCurrentPageBookmarked ? styles.bookmarkActive : ""}
+              aria-label={isCurrentPageBookmarked ? "Remove bookmark" : "Bookmark current page"}
+              title={isCurrentPageBookmarked ? "Remove bookmark" : "Bookmark current page"}
+            >
+              {isCurrentPageBookmarked ? "★ Bookmarked" : "☆ Bookmark"}
+            </button>
             <button onClick={() => setShowSettings(true)}>Aa</button>
             <button onClick={toggleFullscreen} aria-label="Toggle fullscreen" title="Toggle fullscreen">
               {isFullscreen ? "⤡" : "⛶"}
