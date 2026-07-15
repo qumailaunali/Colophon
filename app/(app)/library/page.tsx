@@ -15,6 +15,7 @@ export default function LibraryPage() {
   const [coverUrls, setCoverUrls] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [showUpload, setShowUpload] = useState(false);
+  const [showInfoModal, setShowInfoModal] = useState(false);
 
   // Open Library States
   const [activeTab, setActiveTab] = useState<Tab>("mine");
@@ -310,16 +311,25 @@ export default function LibraryPage() {
             </button>
           )}
         </div>
-        {activeTab === "mine" && (
-          <button className={styles.addButton} onClick={() => setShowUpload(true)}>
-            + Add a book
+        <div className={styles.headerActions}>
+          <button
+            className={styles.infoButton}
+            onClick={() => setShowInfoModal(true)}
+            title="App Features Guide"
+          >
+            ℹ️ Features
           </button>
-        )}
-        {activeTab === "open" && user?.email === "qumailaunali@gmail.com" && (
-          <button className={styles.addButton} onClick={() => setShowUpload(true)}>
-            + Add to Open Library
-          </button>
-        )}
+          {activeTab === "mine" && (
+            <button className={styles.addButton} onClick={() => setShowUpload(true)}>
+              + Add a book
+            </button>
+          )}
+          {activeTab === "open" && user?.email === "qumailaunali@gmail.com" && (
+            <button className={styles.addButton} onClick={() => setShowUpload(true)}>
+              + Add to Open Library
+            </button>
+          )}
+        </div>
       </div>
 
       {loading ? (
@@ -439,6 +449,99 @@ export default function LibraryPage() {
           onClose={() => setShowUpload(false)}
           onUploaded={refresh}
         />
+      )}
+
+      {showInfoModal && (
+        <div className={styles.infoOverlay} onClick={() => setShowInfoModal(false)}>
+          <div className={styles.infoCard} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.infoTitleRow}>
+              <h2 className={styles.infoTitle}>
+                <span>ℹ️</span> Colophon Features Guide
+              </h2>
+              <button
+                className={styles.infoClose}
+                onClick={() => setShowInfoModal(false)}
+                aria-label="Close"
+              >
+                ✕
+              </button>
+            </div>
+
+            <p className={styles.infoDescription}>
+              Explore the advanced reading and study tools built directly into Colophon.
+            </p>
+
+            <div className={styles.featuresList}>
+              <div className={styles.featureItem}>
+                <span className={styles.featureIcon}>⚡</span>
+                <div className={styles.featureBody}>
+                  <h4 className={styles.featureName}>Smart AI Summaries</h4>
+                  <p className={styles.featureText}>Extract key-point summaries and outlines of any book page instantly with one click.</p>
+                </div>
+              </div>
+
+              <div className={styles.featureItem}>
+                <span className={styles.featureIcon}>🎴</span>
+                <div className={styles.featureBody}>
+                  <h4 className={styles.featureName}>3D Flippable Flashcards</h4>
+                  <p className={styles.featureText}>Auto-generate interactive study card decks to practice active recall on book pages.</p>
+                </div>
+              </div>
+
+              <div className={styles.featureItem}>
+                <span className={styles.featureIcon}>💬</span>
+                <div className={styles.featureBody}>
+                  <h4 className={styles.featureName}>"Ask the Book" Chat</h4>
+                  <p className={styles.featureText}>Engage in an interactive chat session to ask the AI assistant questions about the active text.</p>
+                </div>
+              </div>
+
+              <div className={styles.featureItem}>
+                <span className={styles.featureIcon}>🗣️</span>
+                <div className={styles.featureBody}>
+                  <h4 className={styles.featureName}>Premium TTS Read-Aloud</h4>
+                  <p className={styles.featureText}>Listen to chapters with natural regional Azure voices. Custom sleep timers and speech configurations are supported.</p>
+                </div>
+              </div>
+
+              <div className={styles.featureItem}>
+                <span className={styles.featureIcon}>📖</span>
+                <div className={styles.featureBody}>
+                  <h4 className={styles.featureName}>Open Library Sharing</h4>
+                  <p className={styles.featureText}>Access a public community catalog to import shared books or contribute new EPUB files.</p>
+                </div>
+              </div>
+
+              <div className={styles.featureItem}>
+                <span className={styles.featureIcon}>🔍</span>
+                <div className={styles.featureBody}>
+                  <h4 className={styles.featureName}>Wiktionary Lookup & Audio</h4>
+                  <p className={styles.featureText}>Press and hold any word in the reader to view full dictionary definitions and trigger audio pronunciation guides.</p>
+                </div>
+              </div>
+
+              <div className={styles.featureItem}>
+                <span className={styles.featureIcon}>🎨</span>
+                <div className={styles.featureBody}>
+                  <h4 className={styles.featureName}>Sticky Tape Highlights</h4>
+                  <p className={styles.featureText}>Mark key quotes with a translucent sticky tape marker, and bookmark page coordinates for easy navigation.</p>
+                </div>
+              </div>
+
+              <div className={styles.featureItem}>
+                <span className={styles.featureIcon}>👤</span>
+                <div className={styles.featureBody}>
+                  <h4 className={styles.featureName}>Guest Read Mode</h4>
+                  <p className={styles.featureText}>Browse and use all key reader features as a guest without needing registration or saving personal info.</p>
+                </div>
+              </div>
+            </div>
+
+            <button className={styles.infoCloseBtn} onClick={() => setShowInfoModal(false)}>
+              Got it, let's explore!
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

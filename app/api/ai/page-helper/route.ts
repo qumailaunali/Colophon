@@ -69,29 +69,45 @@ Do not wrap the JSON output in markdown code blocks. Return ONLY the raw JSON st
       ];
     }
 
-    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-        "HTTP-Referer": "http://localhost:3000",
-        "X-Title": "Colophon",
-      },
-      body: JSON.stringify({
-        model: "openrouter/free",
-        messages: apiMessages,
-        temperature: action === "ask_book" ? 0.5 : 0.3,
-      }),
-    });
+    let reply = "";
 
-    if (!response.ok) {
-      const errText = await response.text();
-      console.error("OpenRouter API error:", errText);
-      return NextResponse.json({ error: `API request failed: ${response.statusText}` }, { status: 502 });
+    try {
+      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+          "HTTP-Referer": "http://localhost:3000",
+          "X-Title": "Colophon",
+        },
+        body: JSON.stringify({
+          model: "openrouter/free",
+          messages: apiMessages,
+          temperature: action === "ask_book" ? 0.5 : 0.3,
+        }),
+      });
+
+      if (!response.ok) {
+        const errText = await response.text();
+        console.warn("OpenRouter API failed, attempting Gemini fallback. OpenRouter error:", errText);
+        throw new Error(`OpenRouter failed: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      reply = data.choices?.[0]?.message?.content?.trim() || "";
+    } catch (openRouterErr: any) {
+      console.warn("OpenRouter failed or threw error. Falling back to direct Gemini API...", openRouterErr);
+      try {
+        reply = await callGeminiFallback(apiMessages, action);
+        console.log("Direct Gemini fallback API call succeeded!");
+      } catch (geminiErr: any) {
+        console.error("Gemini fallback also failed:", geminiErr);
+        return NextResponse.json(
+          { error: `Both OpenRouter and Gemini backup APIs failed. OpenRouter error: ${openRouterErr.message}. Gemini error: ${geminiErr.message}` },
+          { status: 502 }
+        );
+      }
     }
-
-    const data = await response.json();
-    const reply = data.choices?.[0]?.message?.content?.trim() || "";
 
     if (action === "ask_book") {
       return NextResponse.json({ answer: reply });
@@ -121,4 +137,54 @@ Do not wrap the JSON output in markdown code blocks. Return ONLY the raw JSON st
     console.error("Page helper API error:", err);
     return NextResponse.json({ error: err.message || "Internal server error" }, { status: 500 });
   }
+}
+
+function formatMessagesForGemini(apiMessages: any[]) {
+  const systemMsg = apiMessages.find((m) => m.role === "system");
+  const systemInstruction = systemMsg
+    ? { parts: [{ text: systemMsg.content }] }
+    : undefined;
+
+  const chatMessages = apiMessages.filter((m) => m.role !== "system");
+  const contents = chatMessages.map((m) => ({
+    role: m.role === "assistant" ? "model" : "user",
+    parts: [{ text: m.content }],
+  }));
+
+  return { systemInstruction, contents };
+}
+
+async function callGeminiFallback(apiMessages: any[], action: string) {
+  const rawKey = process.env.Gemini_API_Key || process.env.GEMINI_API_KEY;
+  if (!rawKey) {
+    throw new Error("Gemini backup API key is not configured.");
+  }
+  const geminiApiKey = rawKey.trim();
+
+  const { systemInstruction, contents } = formatMessagesForGemini(apiMessages);
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${geminiApiKey}`;
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      contents,
+      systemInstruction,
+      generationConfig: {
+        temperature: action === "ask_book" ? 0.5 : 0.3,
+      },
+    }),
+  });
+
+  if (!response.ok) {
+    const errText = await response.text();
+    console.error("Gemini API direct error response:", errText);
+    throw new Error(`Gemini API call failed: ${response.statusText} (${response.status})`);
+  }
+
+  const data = await response.json();
+  const reply = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
+  return reply;
 }

@@ -334,3 +334,204 @@
   max-width: 320px;
 }
 
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.infoButton {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--color-paper);
+  border: 1px solid rgba(243, 238, 224, 0.15);
+  border-radius: var(--radius-sm);
+  padding: 10px 18px;
+  font-family: var(--font-ui);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.infoButton:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--color-gold);
+}
+
+/* Information Overlay Modal */
+.infoOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(12, 22, 38, 0.45);
+  backdrop-filter: blur(12px) saturate(180%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 105;
+  padding: 20px;
+  animation: modalFadeIn 0.25s ease-out;
+}
+
+.infoCard {
+  background: rgba(21, 37, 64, 0.95);
+  backdrop-filter: blur(25px) saturate(180%);
+  border: 1px solid rgba(243, 238, 224, 0.18);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  color: var(--color-paper);
+  border-radius: var(--radius-lg);
+  padding: 26px;
+  width: 92%;
+  max-width: 600px;
+  height: 85dvh;
+  max-height: 620px;
+  font-family: var(--font-ui);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  animation: modalScaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  position: relative;
+  text-align: left;
+}
+
+.infoTitleRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.infoTitle {
+  font-size: 1.3rem;
+  font-family: var(--font-display);
+  background: linear-gradient(135deg, var(--color-gold) 0%, #fff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+
+.infoClose {
+  background: none;
+  border: none;
+  color: var(--color-paper);
+  opacity: 0.6;
+  font-size: 1.25rem;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.2s, transform 0.2s;
+}
+
+.infoClose:hover {
+  opacity: 1;
+  transform: rotate(90deg);
+}
+
+.infoDescription {
+  font-size: 0.82rem;
+  line-height: 1.4;
+  color: rgba(243, 238, 224, 0.7);
+  margin: -8px 0 0 0;
+}
+
+.featuresList {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-right: 6px;
+}
+
+/* Custom Scrollbar for Features */
+.featuresList::-webkit-scrollbar {
+  width: 6px;
+}
+.featuresList::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: var(--radius-sm);
+}
+.featuresList::-webkit-scrollbar-thumb {
+  background: rgba(201, 162, 39, 0.3);
+  border-radius: var(--radius-sm);
+}
+.featuresList::-webkit-scrollbar-thumb:hover {
+  background: rgba(201, 162, 39, 0.55);
+}
+
+.featureItem {
+  display: flex;
+  gap: 14px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(243, 238, 224, 0.06);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  align-items: flex-start;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.featureItem:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(201, 162, 39, 0.2);
+}
+
+.featureIcon {
+  font-size: 1.4rem;
+  line-height: 1.2;
+}
+
+.featureBody {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.featureName {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-gold);
+  margin: 0;
+}
+
+.featureText {
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: rgba(243, 238, 224, 0.8);
+  margin: 0;
+}
+
+.infoCloseBtn {
+  background: linear-gradient(135deg, var(--color-gold) 0%, #b88d1d 100%);
+  border: none;
+  color: #0b1424;
+  font-weight: bold;
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: transform 0.2s, opacity 0.2s;
+  text-align: center;
+  box-shadow: 0 4px 14px rgba(201, 162, 39, 0.2);
+}
+
+.infoCloseBtn:hover {
+  transform: translateY(-1px);
+  opacity: 0.95;
+}
+
+@keyframes modalFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modalScaleIn {
+  from { opacity: 0; transform: scale(0.9) translateY(10px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
