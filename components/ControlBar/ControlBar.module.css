@@ -72,7 +72,7 @@
 }
 
 .sleepGroup {
-  grid-column: 1;
+  grid-column: 3;
   justify-self: end;
   display: flex;
   align-items: center;
