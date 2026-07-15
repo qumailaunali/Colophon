@@ -25,6 +25,7 @@ export const metadata: Metadata = {
 };
 
 import { PwaRegister } from "@/components/PwaRegister";
+import { InstallPrompt } from "@/components/Pwa/InstallPrompt";
 
 export default function RootLayout({
   children,
@@ -35,6 +36,7 @@ export default function RootLayout({
     <html lang="en" className={`${fraunces.variable} ${literata.variable} ${plexMono.variable}`}>
       <body>
         <PwaRegister />
+        <InstallPrompt />
         {children}
       </body>
     </html>
