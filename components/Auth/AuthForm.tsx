@@ -39,7 +39,7 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
     <div className={styles.page}>
       <div className={styles.card}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/logo.svg" alt="" width={48} height={48} className={styles.brandLogo} />
+        <img src="/icon-192-removebg.png" alt="" width={48} height={48} className={styles.brandLogo} />
         <div className={styles.brand}>Colophon</div>
         <div className={styles.tagline}>Your library, read aloud</div>
 

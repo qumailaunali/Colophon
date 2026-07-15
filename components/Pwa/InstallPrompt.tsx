@@ -18,7 +18,7 @@ export function InstallPrompt() {
     if (isStandalone) return;
 
     // Check if user dismissed it recently
-    const isDismissed = localStorage.getItem("colophon_install_dismissed") === "true";
+    const isDismissed = sessionStorage.getItem("colophon_install_dismissed") === "true";
     if (isDismissed) return;
 
     // Detect mobile or tablet device
@@ -72,7 +72,7 @@ export function InstallPrompt() {
   const handleDismissClick = () => {
     // Hide the banner and store dismissal state
     setIsVisible(false);
-    localStorage.setItem("colophon_install_dismissed", "true");
+    sessionStorage.setItem("colophon_install_dismissed", "true");
   };
 
   if (!isVisible || !deferredPrompt) return null;
@@ -83,7 +83,7 @@ export function InstallPrompt() {
         <div className={styles.icon}>📖</div>
         <div className={styles.textContainer}>
           <h4 className={styles.title}>Install Colophon</h4>
-          <p className={styles.desc}>Install Colophon Reader on your phone for a full standalone offline reading experience.</p>
+          <p className={styles.desc}>Install Colophon Reader on your phone for a full standalone reading experience.</p>
         </div>
       </div>
       <div className={styles.actions}>

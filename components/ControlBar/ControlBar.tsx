@@ -52,6 +52,26 @@ export function ControlBar({
 
   return (
     <div className={styles.bar}>
+      <div className={styles.sleepGroup}>
+        Sleep timer
+        <select
+          className={styles.select}
+          value={sleepMinutesRemaining != null ? "on" : "off"}
+          onChange={(e) => {
+            const value = e.target.value;
+            onSetSleepTimer(value === "off" ? null : Number(value));
+          }}
+        >
+          <option value="off">Off</option>
+          {SLEEP_OPTIONS.map((m) => (
+            <option key={m} value={m}>
+              {m} min
+            </option>
+          ))}
+        </select>
+        {sleepMinutesRemaining != null && <span>{sleepMinutesRemaining} min left</span>}
+      </div>
+
       <div className={styles.centerGroup}>
         <div className={styles.transport}>
           <button className={styles.iconButton} onClick={onPrevChapter} aria-label="Previous chapter">
@@ -77,25 +97,7 @@ export function ControlBar({
         </div>
       </div>
 
-      <div className={styles.sleepGroup}>
-        Sleep timer
-        <select
-          className={styles.select}
-          value={sleepMinutesRemaining != null ? "on" : "off"}
-          onChange={(e) => {
-            const value = e.target.value;
-            onSetSleepTimer(value === "off" ? null : Number(value));
-          }}
-        >
-          <option value="off">Off</option>
-          {SLEEP_OPTIONS.map((m) => (
-            <option key={m} value={m}>
-              {m} min
-            </option>
-          ))}
-        </select>
-        {sleepMinutesRemaining != null && <span>{sleepMinutesRemaining} min left</span>}
-      </div>
+      <div />
 
       {showSpeechSettings && (
         <div className={styles.overlay} onClick={() => setShowSpeechSettings(false)}>
