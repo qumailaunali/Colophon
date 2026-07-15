@@ -13,6 +13,7 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [verificationSent, setVerificationSent] = useState(false);
 
   async function handleGuestLogin() {
     setError(null);
@@ -77,8 +78,15 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
           if (signInErr) throw signInErr;
         } else {
           // Standard signup fallback
-          const { error: signUpErr } = await supabase.auth.signUp({ email, password });
+          const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({ email, password });
           if (signUpErr) throw signUpErr;
+
+          // If no session was returned, they must confirm their email
+          if (!signUpData.session) {
+            setVerificationSent(true);
+            setLoading(false);
+            return;
+          }
         }
       }
 
@@ -89,6 +97,35 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
     } finally {
       setLoading(false);
     }
+  }
+
+  if (verificationSent) {
+    return (
+      <div className={styles.page}>
+        <div className={styles.container}>
+          <div className={styles.card} style={{ textAlign: "center", padding: "48px 32px", maxWidth: "420px", margin: "0 auto", borderTop: "6px solid var(--color-gold)", borderRadius: "var(--radius-lg)" }}>
+            <div style={{ fontSize: "3.5rem", marginBottom: "20px" }}>✉️</div>
+            <h2 className={styles.cardTitle}>Verify Your Email</h2>
+            <p className={styles.cardSubtitle} style={{ marginBottom: "24px" }}>
+              We have sent a verification link to <strong>{email}</strong>. Please check your inbox and click the link to confirm your account.
+            </p>
+            <div style={{ fontSize: "0.76rem", color: "var(--color-ink-soft)", lineHeight: "1.5", margin: "20px 0", background: "var(--color-paper-dark)", padding: "12px", borderRadius: "var(--radius-sm)", textAlign: "left" }}>
+              💡 <strong>Mobile Readers Note</strong>:<br/>
+              If you verify your email on a phone, make sure the redirect link matches your computer's local IP address rather than <em>localhost</em>.
+            </div>
+            <button
+              className={styles.submit}
+              onClick={() => {
+                setVerificationSent(false);
+                router.push("/login");
+              }}
+            >
+              Back to Login
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
