@@ -47,20 +47,48 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
     setLoading(true);
     const supabase = createClient();
 
-    const { error } =
-      mode === "login"
-        ? await supabase.auth.signInWithPassword({ email, password })
-        : await supabase.auth.signUp({ email, password });
+    try {
+      if (mode === "login") {
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+      } else {
+        // Sign up mode
+        // 1. Try pre-confirmed server signup first to bypass email limits and rate limits
+        let apiSuccess = false;
+        try {
+          const res = await fetch("/api/auth/signup", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, password }),
+          });
+          if (res.ok) {
+            apiSuccess = true;
+          } else {
+            const errData = await res.json().catch(() => ({}));
+            console.warn("Pre-confirmed API signup failed, falling back to standard signup:", errData.error);
+          }
+        } catch (apiErr) {
+          console.warn("Pre-confirmed API signup threw, falling back to standard signup:", apiErr);
+        }
 
-    setLoading(false);
+        if (apiSuccess) {
+          // Log in immediately since the account is already confirmed
+          const { error: signInErr } = await supabase.auth.signInWithPassword({ email, password });
+          if (signInErr) throw signInErr;
+        } else {
+          // Standard signup fallback
+          const { error: signUpErr } = await supabase.auth.signUp({ email, password });
+          if (signUpErr) throw signUpErr;
+        }
+      }
 
-    if (error) {
-      setError(error.message);
-      return;
+      router.push("/library");
+      router.refresh();
+    } catch (err: any) {
+      setError(err.message || "Failed to process authentication.");
+    } finally {
+      setLoading(false);
     }
-
-    router.push("/library");
-    router.refresh();
   }
 
   return (
