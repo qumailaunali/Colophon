@@ -19,6 +19,15 @@
   margin: 0;
 }
 
+@media (max-width: 900px) {
+  .page {
+    padding: 14px 20px 60px;
+  }
+  .header h1 {
+    margin-left: 60px;
+  }
+}
+
 .tabContainer {
   display: flex;
   background: rgba(255, 255, 255, 0.03);
@@ -81,7 +90,7 @@
 /* Open Library Grid & Book Cards */
 .openLibraryGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
   gap: 28px;
   margin-top: 10px;
 }
@@ -94,6 +103,8 @@
   transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
   display: flex;
   flex-direction: column;
+  max-width: 220px;
+  width: 100%;
 }
 
 .openBookCard:hover {
@@ -533,5 +544,15 @@
 @keyframes modalScaleIn {
   from { opacity: 0; transform: scale(0.9) translateY(10px); }
   to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@media (max-width: 600px) {
+  .openLibraryGrid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 16px;
+  }
+  .openBookCard {
+    max-width: 170px;
+  }
 }
 

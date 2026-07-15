@@ -38,6 +38,7 @@ export function useTTSController({ settings, onSentenceChange, onChapterEnd }: U
   const settingsRef = useRef(settings);
   const [voices, setVoices] = useState<TTSVoice[]>([]);
   const [lastError, setLastError] = useState<string | null>(null);
+  const [currentWordBoundary, setCurrentWordBoundary] = useState<{ charIndex: number; charLength: number } | null>(null);
 
   useEffect(() => {
     settingsRef.current = settings;
@@ -54,6 +55,7 @@ export function useTTSController({ settings, onSentenceChange, onChapterEnd }: U
     providerRef.current.stop();
     setPlaying(false);
     setLastError(null);
+    setCurrentWordBoundary(null);
     providerRef.current = getTTSProvider(settings.ttsProvider);
     providerRef.current.listVoices().then(setVoices);
   }, [settings.ttsProvider]);
@@ -72,6 +74,7 @@ export function useTTSController({ settings, onSentenceChange, onChapterEnd }: U
     }
 
     onSentenceChange(chapter.spineIndex, sentence.index);
+    setCurrentWordBoundary(null);
 
     if (!hasSpeakableContent(sentence.text)) {
       sentenceIndexRef.current += 1;
@@ -100,6 +103,9 @@ export function useTTSController({ settings, onSentenceChange, onChapterEnd }: U
           console.error("[TTS] speak failed:", error);
           setLastError(message);
         },
+        onBoundary: (charIndex, charLength) => {
+          setCurrentWordBoundary({ charIndex, charLength });
+        }
       }
     );
 
@@ -125,6 +131,7 @@ export function useTTSController({ settings, onSentenceChange, onChapterEnd }: U
   const setChapter = useCallback((chapter: EpubChapter, sentenceIndex = 0) => {
     chapterRef.current = chapter;
     sentenceIndexRef.current = sentenceIndex;
+    setCurrentWordBoundary(null);
   }, []);
 
   const play = useCallback(
@@ -142,12 +149,14 @@ export function useTTSController({ settings, onSentenceChange, onChapterEnd }: U
   const pause = useCallback(() => {
     providerRef.current.stop();
     setPlaying(false);
+    setCurrentWordBoundary(null);
   }, []);
 
   const stop = useCallback(() => {
     providerRef.current.stop();
     setPlaying(false);
     sentenceIndexRef.current = 0;
+    setCurrentWordBoundary(null);
     if (chapterRef.current) onSentenceChange(chapterRef.current.spineIndex, 0);
   }, [onSentenceChange]);
 
@@ -158,5 +167,16 @@ export function useTTSController({ settings, onSentenceChange, onChapterEnd }: U
 
   const clearError = useCallback(() => setLastError(null), []);
 
-  return { isPlaying, voices, lastError, clearError, play, pause, stop, togglePlayPause, setChapter };
+  return {
+    isPlaying,
+    voices,
+    lastError,
+    currentWordBoundary,
+    clearError,
+    play,
+    pause,
+    stop,
+    togglePlayPause,
+    setChapter,
+  };
 }

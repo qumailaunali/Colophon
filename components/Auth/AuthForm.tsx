@@ -117,11 +117,18 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
         {/* Right Side: Auth Card */}
         <div className={styles.card}>
           <div className={styles.cardHeaderMobileOnly}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/icon-192-removebg.png" alt="" width={40} height={40} className={styles.brandLogoMobile} />
-            <div>
-              <div className={styles.brandMobile}>Colophon</div>
-              <div className={styles.taglineMobile}>Your library, read aloud</div>
+            <div className={styles.brandRowMobile}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/icon-192-removebg.png" alt="" width={40} height={40} className={styles.brandLogoMobile} />
+              <div>
+                <div className={styles.brandMobile}>Colophon</div>
+                <div className={styles.taglineMobile}>Your library, read aloud</div>
+              </div>
+            </div>
+            <div className={styles.mobileFeaturesTagline}>
+              <span>✨ AI Summaries</span>
+              <span>🎙️ Premium Voices</span>
+              <span>🎴 3D Flashcards</span>
             </div>
           </div>
 

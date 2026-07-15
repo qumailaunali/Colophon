@@ -41,6 +41,12 @@ export class WebSpeechProvider implements TTSProvider {
       callbacks.onError(event.error);
     };
 
+    utterance.onboundary = (event) => {
+      if (event.name === "word" && callbacks.onBoundary) {
+        callbacks.onBoundary(event.charIndex, event.charLength || 0);
+      }
+    };
+
     synth.speak(utterance);
   }
 

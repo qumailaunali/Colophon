@@ -687,6 +687,7 @@ export default function BookReaderPage() {
                 lineSpacing={settings.lineSpacing}
                 theme={settings.theme}
                 currentSentenceIndex={currentSentenceIndex}
+                currentWordBoundary={ttsController.currentWordBoundary}
                 highlights={currentChapterHighlights}
                 reducedMotion={reducedMotion}
                 onPageChange={handlePageChange}

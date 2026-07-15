@@ -51,6 +51,7 @@ interface ReaderPaneProps {
   lineSpacing: number;
   theme: ReaderTheme;
   currentSentenceIndex: number | null;
+  currentWordBoundary?: { charIndex: number; charLength: number } | null;
   highlights: HighlightRow[];
   reducedMotion: boolean;
   initialPage?: number;
@@ -71,6 +72,7 @@ export const ReaderPane = forwardRef<ReaderPaneHandle, ReaderPaneProps>(function
     lineSpacing,
     theme,
     currentSentenceIndex,
+    currentWordBoundary,
     highlights,
     reducedMotion,
     initialPage,
@@ -251,19 +253,92 @@ export const ReaderPane = forwardRef<ReaderPaneHandle, ReaderPaneProps>(function
     [animateTurn, getSentencePage, setPage, pageWidth]
   );
 
-  // Toggle the currently-spoken sentence highlight.
+  // Toggle the currently-spoken sentence highlight and split it into words.
   useEffect(() => {
     const columns = columnsRef.current;
     if (!columns) return;
+
+    // Reset previous sentence split words if currentSentenceIndex changes or HTML updates
+    columns.querySelectorAll('[data-split-sentence="true"]').forEach((el: any) => {
+      if (el.dataset.originalHtml) {
+        el.innerHTML = el.dataset.originalHtml;
+        el.removeAttribute("data-split-sentence");
+        el.removeAttribute("data-original-html");
+      }
+    });
+
     columns.querySelectorAll('[data-speaking="true"]').forEach((el) => {
       el.removeAttribute("data-speaking");
     });
+
     if (currentSentenceIndex != null) {
-      columns.querySelectorAll(`[data-sentence-index="${currentSentenceIndex}"]`).forEach((el) => {
+      columns.querySelectorAll(`[data-sentence-index="${currentSentenceIndex}"]`).forEach((el: any) => {
         el.setAttribute("data-speaking", "true");
+
+        // Split text content into spans of individual words for word-by-word highlight
+        const originalHtml = el.innerHTML;
+        el.dataset.originalHtml = originalHtml;
+        el.dataset.splitSentence = "true";
+
+        const textContent = el.textContent || "";
+        const tokens = textContent.split(/(\s+)/);
+        let htmlBuffer = "";
+        let currentOffset = 0;
+
+        for (const token of tokens) {
+          if (/^\s+$/.test(token)) {
+            htmlBuffer += token;
+            currentOffset += token.length;
+          } else {
+            htmlBuffer += `<span class="colophon-word" data-char-start="${currentOffset}" data-char-end="${currentOffset + token.length}">${token}</span>`;
+            currentOffset += token.length;
+          }
+        }
+        el.innerHTML = htmlBuffer;
       });
     }
   }, [currentSentenceIndex, html]);
+
+  // Update active word highlighting based on currentWordBoundary
+  useEffect(() => {
+    const columns = columnsRef.current;
+    if (!columns || currentSentenceIndex == null) return;
+
+    const activeEl = columns.querySelector(`[data-sentence-index="${currentSentenceIndex}"]`) as HTMLElement | null;
+    if (!activeEl) return;
+
+    // Remove active attribute from any previously highlighted words
+    activeEl.querySelectorAll('[data-active-word="true"]').forEach((wordEl) => {
+      wordEl.removeAttribute("data-active-word");
+    });
+
+    const activeIndex = currentWordBoundary?.charIndex;
+    if (activeIndex != null) {
+      // Find the word that starts closest to activeIndex
+      let bestWord: HTMLElement | null = null;
+      let minDiff = Infinity;
+
+      activeEl.querySelectorAll('.colophon-word').forEach((wordEl: any) => {
+        const start = Number(wordEl.getAttribute("data-char-start"));
+        const end = Number(wordEl.getAttribute("data-char-end"));
+        
+        if (activeIndex >= start && activeIndex < end) {
+          bestWord = wordEl;
+          minDiff = 0;
+        } else {
+          const diff = Math.abs(start - activeIndex);
+          if (diff < minDiff) {
+            minDiff = diff;
+            bestWord = wordEl;
+          }
+        }
+      });
+
+      if (bestWord) {
+        (bestWord as HTMLElement).setAttribute("data-active-word", "true");
+      }
+    }
+  }, [currentSentenceIndex, currentWordBoundary]);
 
   // Apply saved highlights as translucent background colors.
   useEffect(() => {

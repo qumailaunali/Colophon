@@ -125,11 +125,10 @@ export class AzureSpeechProvider implements TTSProvider {
       this.objectUrl = null;
     }
     this.abortController?.abort();
-
     const controller = new AbortController();
     this.abortController = controller;
 
-    this.attemptSpeak(text, options, controller, 1)
+    this.attemptSpeak(text, options, callbacks, controller, 1)
       .then(() => callbacks.onEnd())
       .catch((error) => {
         if (controller.signal.aborted) return;
@@ -144,6 +143,7 @@ export class AzureSpeechProvider implements TTSProvider {
   private async attemptSpeak(
     text: string,
     options: TTSUtteranceOptions,
+    callbacks: TTSSpeakCallbacks,
     controller: AbortController,
     retriesLeft: number
   ): Promise<void> {
@@ -171,7 +171,7 @@ export class AzureSpeechProvider implements TTSProvider {
             URL.revokeObjectURL(this.prefetched.url);
           }
           this.prefetched = null;
-          return this.doNormalSpeakFetch(text, options, controller, retriesLeft);
+          return this.doNormalSpeakFetch(text, options, callbacks, controller, retriesLeft);
         }
       } else {
         // No match, or no prefetch. Clean up any existing prefetch.
@@ -182,10 +182,10 @@ export class AzureSpeechProvider implements TTSProvider {
           }
           this.prefetched = null;
         }
-        return this.doNormalSpeakFetch(text, options, controller, retriesLeft);
+        return this.doNormalSpeakFetch(text, options, callbacks, controller, retriesLeft);
       }
 
-      await this.playAudioUrl(url, options);
+      await this.playAudioUrl(url, options, callbacks, text);
     } catch (error) {
       if (this.objectUrl) {
         URL.revokeObjectURL(this.objectUrl);
@@ -196,7 +196,7 @@ export class AzureSpeechProvider implements TTSProvider {
       if (controller.signal.aborted) throw error;
       if (retriesLeft > 0) {
         console.warn("[Azure TTS] retrying after error:", error);
-        return this.attemptSpeak(text, options, controller, retriesLeft - 1);
+        return this.attemptSpeak(text, options, callbacks, controller, retriesLeft - 1);
       }
       throw error;
     }
@@ -205,6 +205,7 @@ export class AzureSpeechProvider implements TTSProvider {
   private async doNormalSpeakFetch(
     text: string,
     options: TTSUtteranceOptions,
+    callbacks: TTSSpeakCallbacks,
     controller: AbortController,
     retriesLeft: number
   ): Promise<void> {
@@ -230,16 +231,50 @@ export class AzureSpeechProvider implements TTSProvider {
     }
 
     const url = URL.createObjectURL(blob);
-    await this.playAudioUrl(url, options);
+    await this.playAudioUrl(url, options, callbacks, text);
   }
 
-  private async playAudioUrl(url: string, options: TTSUtteranceOptions): Promise<void> {
+  private async playAudioUrl(
+    url: string,
+    options: TTSUtteranceOptions,
+    callbacks: TTSSpeakCallbacks,
+    text: string
+  ): Promise<void> {
     await new Promise<void>((resolve, reject) => {
       const audio = new Audio(url);
       audio.playbackRate = options.rate;
       audio.volume = Math.min(1, Math.max(0, options.volume));
       this.audio = audio;
       this.objectUrl = url;
+
+      // Estimated word boundaries
+      audio.ontimeupdate = () => {
+        if (!audio.duration || !callbacks.onBoundary) return;
+        
+        const ratio = audio.currentTime / audio.duration;
+        const textLength = text.length;
+        const estimatedCharIndex = Math.min(textLength - 1, Math.floor(ratio * textLength));
+
+        // Scan backward for word start
+        let wordStart = 0;
+        for (let j = estimatedCharIndex; j >= 0; j--) {
+          if (/\s/.test(text[j])) {
+            wordStart = j + 1;
+            break;
+          }
+        }
+
+        // Scan forward for word end
+        let wordEnd = textLength;
+        for (let j = wordStart; j < textLength; j++) {
+          if (/\s/.test(text[j])) {
+            wordEnd = j;
+            break;
+          }
+        }
+
+        callbacks.onBoundary(wordStart, wordEnd - wordStart);
+      };
 
       audio.onended = () => resolve();
       audio.onerror = () => {
