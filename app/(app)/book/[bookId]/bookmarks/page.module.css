@@ -22,13 +22,23 @@
 
 .backLink {
   display: inline-block;
-  color: rgba(243, 238, 224, 0.75);
+  background: rgba(243, 238, 224, 0.08);
+  border: 1px solid rgba(243, 238, 224, 0.18);
+  color: var(--color-paper);
+  border-radius: var(--radius-sm);
+  padding: 7px 12px;
   font-family: var(--font-ui);
-  font-size: 0.8rem;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  white-space: nowrap;
+  text-decoration: none;
   margin-bottom: 18px;
 }
 
 .backLink:hover {
+  background: rgba(243, 238, 224, 0.16);
   color: var(--color-paper);
 }
 

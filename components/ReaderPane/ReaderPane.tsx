@@ -56,6 +56,8 @@ interface ReaderPaneProps {
   onPageChange: (page: number, pageCount: number) => void;
   onSentenceClick: (sentenceIndex: number) => void;
   onSelectionCommit: (selection: SelectionCommit) => void;
+  onPrevPage?: () => void;
+  onNextPage?: () => void;
 }
 
 export const ReaderPane = forwardRef<ReaderPaneHandle, ReaderPaneProps>(function ReaderPane(
@@ -73,6 +75,8 @@ export const ReaderPane = forwardRef<ReaderPaneHandle, ReaderPaneProps>(function
     onPageChange,
     onSentenceClick,
     onSelectionCommit,
+    onPrevPage,
+    onNextPage,
   },
   ref
 ) {
@@ -253,10 +257,18 @@ export const ReaderPane = forwardRef<ReaderPaneHandle, ReaderPaneProps>(function
     if (Math.abs(delta) < 50) return;
     if (delta < 0) {
       const next = currentPageRef.current + 1;
-      if (next < pageCountRef.current) animateTurn(1, next);
+      if (next < pageCountRef.current) {
+        animateTurn(1, next);
+      } else {
+        onNextPage?.();
+      }
     } else {
       const prev = currentPageRef.current - 1;
-      if (prev >= 0) animateTurn(-1, prev);
+      if (prev >= 0) {
+        animateTurn(-1, prev);
+      } else {
+        onPrevPage?.();
+      }
     }
   }
 

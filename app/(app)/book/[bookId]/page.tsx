@@ -231,7 +231,11 @@ export default function BookReaderPage() {
   function handlePrevPage() {
     const advanced = readerPaneRef.current?.prevPage();
     if (advanced === false && currentSpineIndex - 1 >= 0) {
-      navigateToChapter(currentSpineIndex - 1, 0);
+      const prevChapter = chapters[currentSpineIndex - 1];
+      const lastSentenceIndex = prevChapter.sentences.length > 0
+        ? prevChapter.sentences.length - 1
+        : 0;
+      navigateToChapter(currentSpineIndex - 1, lastSentenceIndex);
     }
   }
 
@@ -436,6 +440,8 @@ export default function BookReaderPage() {
                 onPageChange={(page, pageCount) => setPageInfo({ page, pageCount })}
                 onSentenceClick={handleSentenceClick}
                 onSelectionCommit={setPendingSelection}
+                onPrevPage={handlePrevPage}
+                onNextPage={handleNextPage}
               />
             )}
           </div>
