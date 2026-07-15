@@ -97,16 +97,29 @@ export function DictionaryPopover({ word, onClose }: DictionaryPopoverProps) {
     };
   }, [word]);
 
+  const speakWordFallback = (text: string) => {
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = 0.85; // slightly slower for clear pronunciation
+      window.speechSynthesis.speak(utterance);
+    }
+  };
+
   const playPronunciation = () => {
     if (!entry) return;
     const phoneticWithAudio = entry.phonetics.find((p) => p.audio);
     if (phoneticWithAudio?.audio) {
       const audio = new Audio(phoneticWithAudio.audio);
-      audio.play().catch(() => {});
+      audio.play().catch(() => {
+        speakWordFallback(entry.word);
+      });
+    } else {
+      speakWordFallback(entry.word);
     }
   };
 
-  const hasAudio = entry?.phonetics.some((p) => p.audio);
+  const hasAudio = true;
 
   return (
     <div className={styles.overlay} onClick={onClose}>

@@ -52,7 +52,25 @@ export function ControlBar({
 
   return (
     <div className={styles.bar}>
-      <div />
+      <div className={styles.sleepGroup}>
+        <span className={styles.sleepLabel}>Sleep timer</span>
+        <select
+          className={styles.select}
+          value={sleepMinutesRemaining != null ? "on" : "off"}
+          onChange={(e) => {
+            const value = e.target.value;
+            onSetSleepTimer(value === "off" ? null : Number(value));
+          }}
+        >
+          <option value="off">Off</option>
+          {SLEEP_OPTIONS.map((m) => (
+            <option key={m} value={m}>
+              {m} min
+            </option>
+          ))}
+        </select>
+        {sleepMinutesRemaining != null && <span>{sleepMinutesRemaining} min left</span>}
+      </div>
 
       <div className={styles.centerGroup}>
         <div className={styles.transport}>
@@ -79,25 +97,7 @@ export function ControlBar({
         </div>
       </div>
 
-      <div className={styles.sleepGroup}>
-        Sleep timer
-        <select
-          className={styles.select}
-          value={sleepMinutesRemaining != null ? "on" : "off"}
-          onChange={(e) => {
-            const value = e.target.value;
-            onSetSleepTimer(value === "off" ? null : Number(value));
-          }}
-        >
-          <option value="off">Off</option>
-          {SLEEP_OPTIONS.map((m) => (
-            <option key={m} value={m}>
-              {m} min
-            </option>
-          ))}
-        </select>
-        {sleepMinutesRemaining != null && <span>{sleepMinutesRemaining} min left</span>}
-      </div>
+      <div />
 
       {showSpeechSettings && (
         <div className={styles.overlay} onClick={() => setShowSpeechSettings(false)}>
