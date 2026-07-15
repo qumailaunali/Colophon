@@ -77,6 +77,17 @@ export type ReaderSettingsRow = {
   updated_at: string;
 };
 
+export type OpenLibraryBookRow = {
+  id: string;
+  title: string;
+  author: string | null;
+  cover_path: string | null;
+  file_path: string;
+  toc: BookTocData;
+  uploader_email: string | null;
+  created_at: string;
+};
+
 export type Database = {
   public: {
     Tables: {
@@ -114,6 +125,12 @@ export type Database = {
           updated_at?: string;
         };
         Update: Partial<Omit<ReaderSettingsRow, "id" | "user_id">>;
+        Relationships: [];
+      };
+      open_library_books: {
+        Row: OpenLibraryBookRow;
+        Insert: Omit<OpenLibraryBookRow, "id" | "created_at"> & { id?: string };
+        Update: Partial<Omit<OpenLibraryBookRow, "id">>;
         Relationships: [];
       };
     };

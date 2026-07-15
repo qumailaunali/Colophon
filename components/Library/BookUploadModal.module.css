@@ -64,3 +64,32 @@
 .cancel:hover {
   background: var(--color-paper-dark);
 }
+
+.failedList {
+  margin-top: 14px;
+  background: rgba(220, 38, 38, 0.05);
+  border: 1px solid rgba(220, 38, 38, 0.2);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+}
+
+.failedHeader {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-ribbon);
+  margin-top: 0;
+  margin-bottom: 6px;
+}
+
+.failedList ul {
+  margin: 0;
+  padding-left: 16px;
+  list-style: disc;
+}
+
+.failedItem {
+  font-size: 0.75rem;
+  color: var(--color-ink-soft);
+  line-height: 1.4;
+  margin-bottom: 4px;
+}

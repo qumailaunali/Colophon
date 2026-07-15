@@ -7,11 +7,6 @@ import { createClient } from "@/lib/supabase/client";
 import { useSidebarToc } from "@/lib/context/SidebarTocContext";
 import styles from "./Sidebar.module.css";
 
-const NAV_LINKS = [
-  { href: "/library", label: "Library" },
-  { href: "/settings", label: "Settings" },
-];
-
 const COLLAPSED_STORAGE_KEY = "colophon-sidebar-collapsed";
 
 export function Sidebar() {
@@ -21,6 +16,18 @@ export function Sidebar() {
   const [open, setOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [email, setEmail] = useState<string | null>(null);
+
+  const match = pathname.match(/^\/book\/([^\/]+)/);
+  const bookId = match ? match[1] : null;
+
+  const navLinks = [
+    { href: "/library", label: "Library" },
+    { href: "/settings", label: "Settings" },
+  ];
+
+  if (bookId) {
+    navLinks.push({ href: `/book/${bookId}/bookmarks`, label: "Bookmarks" });
+  }
 
   useEffect(() => {
     const supabase = createClient();
@@ -86,7 +93,7 @@ export function Sidebar() {
         </div>
 
         <nav className={`${styles.nav} ${styles.hideWhenCollapsed}`}>
-          {NAV_LINKS.map((link) => (
+          {navLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}

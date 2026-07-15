@@ -26,6 +26,7 @@ import { SearchPanel } from "@/components/SearchPanel/SearchPanel";
 import { HighlightPopover } from "@/components/Highlights/HighlightPopover";
 import { DictionaryPopover } from "@/components/Dictionary/DictionaryPopover";
 import styles from "./page.module.css";
+import { HighlightIcon } from "@/components/Icons/HighlightIcon";
 
 export default function BookReaderPage() {
   const params = useParams<{ bookId: string }>();
@@ -45,11 +46,41 @@ export default function BookReaderPage() {
 
   const [showSearch, setShowSearch] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showAiModal, setShowAiModal] = useState(false);
+  const [showInfoModal, setShowInfoModal] = useState(false);
+  const [aiAction, setAiAction] = useState<"idle" | "summarizing" | "generating_flashcards" | "chat_answering">("idle");
+  const [aiSummary, setAiSummary] = useState<string[] | null>(null);
+  const [aiFlashcards, setAiFlashcards] = useState<{ question: string; answer: string }[] | null>(null);
+  const [currentCardIndex, setCurrentCardIndex] = useState(0);
+  const [cardFlipped, setCardFlipped] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+  const [aiActiveTab, setAiActiveTab] = useState<"none" | "summary" | "flashcards" | "chat">("none");
+  const [chatMessages, setChatMessages] = useState<{ role: "user" | "assistant"; content: string }[]>([]);
+  const [chatInput, setChatInput] = useState("");
+  const chatEndRef = useRef<HTMLDivElement>(null);
   const [lookupWord, setLookupWord] = useState<string | null>(null);
   const [reducedMotion, setReducedMotion] = useState(false);
   const [pageInfo, setPageInfo] = useState({ page: 0, pageCount: 1 });
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [focusMode, setFocusMode] = useState(false);
+
+  const [activeTooltip, setActiveTooltip] = useState<string | null>(null);
+  const tooltipTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const handleTouchStart = (label: string) => {
+    if (tooltipTimeoutRef.current) clearTimeout(tooltipTimeoutRef.current);
+    tooltipTimeoutRef.current = setTimeout(() => {
+      setActiveTooltip(label);
+    }, 450); // standard long-press duration
+  };
+
+  const handleTouchEnd = () => {
+    if (tooltipTimeoutRef.current) {
+      clearTimeout(tooltipTimeoutRef.current);
+      tooltipTimeoutRef.current = null;
+    }
+    setActiveTooltip(null);
+  };
 
   const isCurrentPageBookmarked = useMemo(() => {
     return bookmarks.some(
@@ -74,6 +105,140 @@ export default function BookReaderPage() {
       sentenceIndex,
       scrollOrPageOffset: pane?.getCurrentPage() ?? 0,
     });
+  }
+
+  // Clear AI data when closing the helper modal
+  useEffect(() => {
+    if (!showAiModal) {
+      setAiSummary(null);
+      setAiFlashcards(null);
+      setAiError(null);
+      setAiAction("idle");
+      setAiActiveTab("none");
+      setChatMessages([]);
+      setChatInput("");
+    }
+  }, [showAiModal]);
+
+  // Scroll to bottom of chat history when new messages arrive
+  useEffect(() => {
+    if (aiActiveTab === "chat") {
+      chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [chatMessages, aiAction, aiActiveTab]);
+
+  async function handleAiSummarize() {
+    setAiAction("summarizing");
+    setAiSummary(null);
+    setAiFlashcards(null);
+    setAiError(null);
+
+    const text = readerPaneRef.current?.getActivePageText();
+    if (!text || text.trim().length < 10) {
+      setAiError("This page does not contain enough readable text to summarize.");
+      setAiAction("idle");
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/ai/page-helper", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "summarize", text }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        setAiError(data.error || "Failed to generate summary.");
+      } else {
+        setAiSummary(data.summary || []);
+      }
+    } catch (err: any) {
+      setAiError(err.message || "An error occurred while connecting to the AI helper.");
+    } finally {
+      setAiAction("idle");
+    }
+  }
+
+  async function handleAiFlashcards() {
+    setAiAction("generating_flashcards");
+    setAiSummary(null);
+    setAiFlashcards(null);
+    setAiError(null);
+    setCurrentCardIndex(0);
+    setCardFlipped(false);
+
+    const text = readerPaneRef.current?.getActivePageText();
+    if (!text || text.trim().length < 10) {
+      setAiError("This page does not contain enough readable text to generate flashcards.");
+      setAiAction("idle");
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/ai/page-helper", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "flashcards", text }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        setAiError(data.error || "Failed to generate flashcards.");
+      } else {
+        setAiFlashcards(data.flashcards || []);
+      }
+    } catch (err: any) {
+      setAiError(err.message || "An error occurred while connecting to the AI helper.");
+    } finally {
+      setAiAction("idle");
+    }
+  }
+
+  async function handleSendChatMessage(e?: React.FormEvent) {
+    if (e) e.preventDefault();
+    if (!chatInput.trim() || aiAction !== "idle") return;
+
+    const userQuestion = chatInput.trim();
+    setChatInput("");
+    setAiError(null);
+
+    const updatedMessages = [
+      ...chatMessages,
+      { role: "user" as const, content: userQuestion },
+    ];
+    setChatMessages(updatedMessages);
+    setAiAction("chat_answering");
+
+    const text = readerPaneRef.current?.getActivePageText();
+    if (!text || text.trim().length < 10) {
+      setAiError("This page does not contain enough readable text to ask questions.");
+      setAiAction("idle");
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/ai/page-helper", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "ask_book",
+          text,
+          messages: updatedMessages.slice(1),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        setAiError(data.error || "Failed to retrieve response from AI.");
+      } else {
+        setChatMessages([
+          ...updatedMessages,
+          { role: "assistant" as const, content: data.answer },
+        ]);
+      }
+    } catch (err: any) {
+      setAiError(err.message || "An error occurred while connecting to the AI helper.");
+    } finally {
+      setAiAction("idle");
+    }
   }
 
   function handleChapterEnd() {
@@ -374,40 +539,97 @@ export default function BookReaderPage() {
 
   return (
     <div className={styles.bookPage}>
+      {activeTooltip && (
+        <div className={styles.tooltipToast}>
+          {activeTooltip}
+        </div>
+      )}
       {!focusMode && (
         <div className={styles.topBar}>
-          <Link href="/library" className={styles.backLink}>
+          <Link
+            href="/library"
+            className={styles.backLink}
+            onTouchStart={() => handleTouchStart("Library")}
+            onTouchEnd={handleTouchEnd}
+            onTouchCancel={handleTouchEnd}
+          >
             ‹ <span className={styles.desktopText}>Library</span>
           </Link>
           <div className={styles.bookTitle}>{book.title}</div>
           <div className={styles.topActions}>
-            <button onClick={() => setShowSearch(true)} aria-label="Search" title="Search">
+            <button
+              onClick={() => setShowSearch(true)}
+              aria-label="Search"
+              title="Search"
+              onTouchStart={() => handleTouchStart("Search")}
+              onTouchEnd={handleTouchEnd}
+              onTouchCancel={handleTouchEnd}
+            >
               <span className={styles.desktopText}>Search</span>
               <span className={styles.mobileIcon}>🔍</span>
             </button>
-            <Link href={`/book/${book.id}/highlights`} aria-label="Highlights" title="Highlights">
+            <Link
+              href={`/book/${book.id}/highlights`}
+              aria-label="Highlights"
+              title="Highlights"
+              onTouchStart={() => handleTouchStart("Highlights")}
+              onTouchEnd={handleTouchEnd}
+              onTouchCancel={handleTouchEnd}
+            >
               <span className={styles.desktopText}>Highlights</span>
-              <span className={styles.mobileIcon}>🖊</span>
-            </Link>
-            <Link href={`/book/${book.id}/bookmarks`} aria-label="Bookmarks" title="Bookmarks">
-              <span className={styles.desktopText}>Bookmarks</span>
-              <span className={styles.mobileIcon}>🔖</span>
+              <HighlightIcon className={styles.mobileIcon} />
             </Link>
             <button
               onClick={toggleBookmark}
               className={isCurrentPageBookmarked ? styles.bookmarkActive : ""}
               aria-label={isCurrentPageBookmarked ? "Remove bookmark" : "Bookmark current page"}
               title={isCurrentPageBookmarked ? "Remove bookmark" : "Bookmark current page"}
+              onTouchStart={() => handleTouchStart(isCurrentPageBookmarked ? "Remove bookmark" : "Bookmark page")}
+              onTouchEnd={handleTouchEnd}
+              onTouchCancel={handleTouchEnd}
             >
               {isCurrentPageBookmarked ? "★" : "☆"}
             </button>
-            <button onClick={() => setShowSettings(true)} aria-label="Settings" title="Settings">Aa</button>
-            <button onClick={toggleFullscreen} aria-label="Toggle fullscreen" title="Toggle fullscreen">
+            <button
+              onClick={() => setShowSettings(true)}
+              aria-label="Settings"
+              title="Settings"
+              onTouchStart={() => handleTouchStart("Settings")}
+              onTouchEnd={handleTouchEnd}
+              onTouchCancel={handleTouchEnd}
+            >
+              Aa
+            </button>
+            <button
+              onClick={toggleFullscreen}
+              aria-label="Toggle fullscreen"
+              title="Toggle fullscreen"
+              onTouchStart={() => handleTouchStart(isFullscreen ? "Exit fullscreen" : "Enter fullscreen")}
+              onTouchEnd={handleTouchEnd}
+              onTouchCancel={handleTouchEnd}
+            >
               {isFullscreen ? "⤡" : "⛶"}
             </button>
-            <button onClick={() => setFocusMode(true)} aria-label="Focus mode" title="Focus mode: hide sidebar and controls">
+            <button
+              onClick={() => setFocusMode(true)}
+              aria-label="Focus mode"
+              title="Focus mode: hide sidebar and controls"
+              onTouchStart={() => handleTouchStart("Focus mode")}
+              onTouchEnd={handleTouchEnd}
+              onTouchCancel={handleTouchEnd}
+            >
               <span className={styles.desktopText}>Focus</span>
               <span className={styles.mobileIcon}>👁</span>
+            </button>
+            <button
+              onClick={() => setShowInfoModal(true)}
+              aria-label="App features guide"
+              title="App features guide"
+              onTouchStart={() => handleTouchStart("App guide")}
+              onTouchEnd={handleTouchEnd}
+              onTouchCancel={handleTouchEnd}
+            >
+              ℹ
             </button>
           </div>
         </div>
@@ -571,6 +793,300 @@ export default function BookReaderPage() {
           word={lookupWord}
           onClose={() => setLookupWord(null)}
         />
+      )}
+
+      {!focusMode && (
+        <button
+          className={styles.aiButton}
+          onClick={() => setShowAiModal(true)}
+          aria-label="AI assistant"
+          title="AI assistant"
+        >
+          ✨
+        </button>
+      )}
+
+      {showAiModal && (
+        <div
+          className={styles.aiWindowOverlay}
+          onClick={() => {
+            if (aiAction === "idle") setShowAiModal(false);
+          }}
+        >
+          <div className={styles.aiWindow} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.aiTitleRow}>
+              <h2 className={styles.aiTitle}>
+                <span>✨</span> Colophon AI Helper
+              </h2>
+              <button
+                className={styles.aiClose}
+                onClick={() => setShowAiModal(false)}
+                disabled={aiAction !== "idle"}
+                aria-label="Close"
+              >
+                ✕
+              </button>
+            </div>
+
+            <p className={styles.aiDescription}>
+              Analyze this page to extract insights or test your knowledge.
+            </p>
+
+            <div className={styles.aiActions}>
+              <button
+                className={`${styles.aiActionButton} ${aiActiveTab === "summary" ? styles.aiActionButtonActive : ""}`}
+                onClick={() => {
+                  setAiActiveTab("summary");
+                  handleAiSummarize();
+                }}
+                disabled={aiAction !== "idle" && aiAction !== "chat_answering"}
+              >
+                <span className={styles.aiActionButtonIcon}>📝</span>
+                <span>Summarize Page</span>
+              </button>
+              <button
+                className={`${styles.aiActionButton} ${aiActiveTab === "flashcards" ? styles.aiActionButtonActive : ""}`}
+                onClick={() => {
+                  setAiActiveTab("flashcards");
+                  handleAiFlashcards();
+                }}
+                disabled={aiAction !== "idle" && aiAction !== "chat_answering"}
+              >
+                <span className={styles.aiActionButtonIcon}>🃏</span>
+                <span>Generate Cards</span>
+              </button>
+              <button
+                className={`${styles.aiActionButton} ${aiActiveTab === "chat" ? styles.aiActionButtonActive : ""}`}
+                onClick={() => {
+                  setAiActiveTab("chat");
+                  if (chatMessages.length === 0) {
+                    setChatMessages([
+                      { role: "assistant", content: "Hi! I'm your AI reading assistant. Ask me anything about the content of this page!" }
+                    ]);
+                  }
+                }}
+                disabled={aiAction !== "idle" && aiAction !== "chat_answering"}
+              >
+                <span className={styles.aiActionButtonIcon}>💬</span>
+                <span>Ask the Book</span>
+              </button>
+            </div>
+
+            {/* Results Container */}
+            <div className={aiActiveTab === "chat" ? styles.chatContainer : styles.aiResultsScroll}>
+              {/* Loading View */}
+              {aiAction !== "idle" && aiAction !== "chat_answering" && (
+                <div className={styles.aiLoading}>
+                  <div className={styles.aiSpinner} />
+                  <span className={styles.aiLoadingText}>
+                    {aiAction === "summarizing"
+                      ? "AI is reading page and drafting summary..."
+                      : "AI is analyzing context to design flashcards..."}
+                  </span>
+                </div>
+              )}
+
+              {/* Error View */}
+              {aiError && <div className={styles.aiError}>⚠️ {aiError}</div>}
+
+              {/* Summary Result */}
+              {aiActiveTab === "summary" && aiSummary && aiAction === "idle" && (
+                <div className={styles.summaryCard}>
+                  <h3 className={styles.summaryTitle}>📝 Page Summary</h3>
+                  <ul className={styles.summaryList}>
+                    {aiSummary.map((point, index) => (
+                      <li key={index} className={styles.summaryItem}>
+                        {point}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Flashcards Result */}
+              {aiActiveTab === "flashcards" && aiFlashcards && aiFlashcards.length > 0 && aiAction === "idle" && (
+                <div className={styles.flashcardArea}>
+                  <div
+                    className={styles.flashcardPerspective}
+                    onClick={() => setCardFlipped(!cardFlipped)}
+                  >
+                    <div className={`${styles.flashcardInner} ${cardFlipped ? styles.flashcardFlipped : ""}`}>
+                      {/* Front: Question */}
+                      <div className={styles.flashcardFront}>
+                        <span className={styles.flashcardSideLabel}>Question</span>
+                        <p className={styles.flashcardContent}>
+                          {aiFlashcards[currentCardIndex]?.question}
+                        </p>
+                        <span className={styles.flashcardInstruction}>Tap to flip & see answer</span>
+                      </div>
+                      {/* Back: Answer */}
+                      <div className={styles.flashcardBack}>
+                        <span className={styles.flashcardSideLabel}>Answer</span>
+                        <p className={styles.flashcardContent}>
+                          {aiFlashcards[currentCardIndex]?.answer}
+                        </p>
+                        <span className={styles.flashcardInstruction}>Tap to flip back</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className={styles.flashcardControls}>
+                    <button
+                      className={styles.flashcardNavButton}
+                      disabled={currentCardIndex === 0}
+                      onClick={() => {
+                        setCardFlipped(false);
+                        setTimeout(() => setCurrentCardIndex((prev) => prev - 1), 150);
+                      }}
+                    >
+                      ◀ Prev
+                    </button>
+                    <span className={styles.flashcardCounter}>
+                      Card {currentCardIndex + 1} of {aiFlashcards.length}
+                    </span>
+                    <button
+                      className={styles.flashcardNavButton}
+                      disabled={currentCardIndex === aiFlashcards.length - 1}
+                      onClick={() => {
+                        setCardFlipped(false);
+                        setTimeout(() => setCurrentCardIndex((prev) => prev + 1), 150);
+                      }}
+                    >
+                      Next ▶
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Chat View */}
+              {aiActiveTab === "chat" && (
+                <>
+                  <div className={styles.chatHistory}>
+                    {chatMessages.map((msg, index) => (
+                      <div
+                        key={index}
+                        className={`${styles.chatBubble} ${
+                          msg.role === "user" ? styles.chatBubbleUser : styles.chatBubbleAssistant
+                        }`}
+                      >
+                        {msg.content}
+                      </div>
+                    ))}
+                    {aiAction === "chat_answering" && (
+                      <div className={`${styles.chatBubble} ${styles.chatBubbleAssistant} ${styles.chatBubbleLoading}`}>
+                        <div className={styles.chatSpinnerSmall} />
+                        <span>AI is reading page & typing...</span>
+                      </div>
+                    )}
+                    <div ref={chatEndRef} />
+                  </div>
+                  <form onSubmit={handleSendChatMessage} className={styles.chatInputForm}>
+                    <input
+                      type="text"
+                      className={styles.chatInput}
+                      value={chatInput}
+                      onChange={(e) => setChatInput(e.target.value)}
+                      placeholder="Ask about this page..."
+                      disabled={aiAction !== "idle" && aiAction !== "chat_answering"}
+                    />
+                    <button
+                      type="submit"
+                      className={styles.chatSendButton}
+                      disabled={(aiAction !== "idle" && aiAction !== "chat_answering") || !chatInput.trim()}
+                    >
+                      Send
+                    </button>
+                  </form>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showInfoModal && (
+        <div className={styles.infoOverlay} onClick={() => setShowInfoModal(false)}>
+          <div className={styles.infoCard} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.infoTitleRow}>
+              <h2 className={styles.infoTitle}>
+                <span>ℹ️</span> Colophon Guide
+              </h2>
+              <button
+                className={styles.infoClose}
+                onClick={() => setShowInfoModal(false)}
+                aria-label="Close"
+              >
+                ✕
+              </button>
+            </div>
+
+            <p className={styles.infoDescription}>
+              Explore the advanced reading and study tools built directly into Colophon.
+            </p>
+
+            <div className={styles.featuresList}>
+              <div className={styles.featureItem}>
+                <span className={styles.featureIcon}>✨</span>
+                <div className={styles.featureBody}>
+                  <h4 className={styles.featureName}>AI Helper (Summaries & Cards)</h4>
+                  <p className={styles.featureText}>Click the floating button (✨) to query smart key-point summaries or practice active recall with flippable 3D study flashcards.</p>
+                </div>
+              </div>
+
+              <div className={styles.featureItem}>
+                <span className={styles.featureIcon}>🗣️</span>
+                <div className={styles.featureBody}>
+                  <h4 className={styles.featureName}>Premium Read-Aloud</h4>
+                  <p className={styles.featureText}>Listen to chapters with natural premium Azure voices. Custom rates, pitches, and active word highlights are supported.</p>
+                </div>
+              </div>
+
+              <div className={styles.featureItem}>
+                <span className={styles.featureIcon}>⏱️</span>
+                <div className={styles.featureBody}>
+                  <h4 className={styles.featureName}>Control Bar & Sleep Timer</h4>
+                  <p className={styles.featureText}>Play, pause, skip chapters, configure voices, or schedule a sleep timer (15 to 60 minutes) at the bottom.</p>
+                </div>
+              </div>
+
+              <div className={styles.featureItem}>
+                <span className={styles.featureIcon}>🔍</span>
+                <div className={styles.featureBody}>
+                  <h4 className={styles.featureName}>Instant Definitions</h4>
+                  <p className={styles.featureText}>Press and hold on any word to pull up detailed definitions from Wiktionary and speak pronunciation audios.</p>
+                </div>
+              </div>
+
+              <div className={styles.featureItem}>
+                <span className={styles.featureIcon}>🎨</span>
+                <div className={styles.featureBody}>
+                  <h4 className={styles.featureName}>Tape Highlights</h4>
+                  <p className={styles.featureText}>Drag and select page text to mark key items using a custom sticky tape roll marker. Saved items persist dynamically.</p>
+                </div>
+              </div>
+
+              <div className={styles.featureItem}>
+                <span className={styles.featureIcon}>🔖</span>
+                <div className={styles.featureBody}>
+                  <h4 className={styles.featureName}>Bookmarked Pages</h4>
+                  <p className={styles.featureText}>Bookmark your current reading locations, and manage/jump back to them easily from the sidebar Bookmarks tab.</p>
+                </div>
+              </div>
+
+              <div className={styles.featureItem}>
+                <span className={styles.featureIcon}>📱</span>
+                <div className={styles.featureBody}>
+                  <h4 className={styles.featureName}>Standalone Mobile App (PWA)</h4>
+                  <p className={styles.featureText}>Install Colophon directly on your home screen for full standalone launch, distraction-free reading, and fast loading.</p>
+                </div>
+              </div>
+            </div>
+
+            <button className={styles.infoCloseBtn} onClick={() => setShowInfoModal(false)}>
+              Got it, let's read!
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

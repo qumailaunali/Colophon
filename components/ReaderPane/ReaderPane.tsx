@@ -34,6 +34,7 @@ export interface ReaderPaneHandle {
   getPageCount: () => number;
   getCurrentPage: () => number;
   getFirstSentenceOnPage: () => number;
+  getActivePageText: () => string;
 }
 
 export interface SelectionCommit {
@@ -232,6 +233,19 @@ export const ReaderPane = forwardRef<ReaderPaneHandle, ReaderPaneProps>(function
           }
         }
         return 0;
+      },
+      getActivePageText: () => {
+        const columns = columnsRef.current;
+        if (!columns || pageWidth === 0) return "";
+        const els = columns.querySelectorAll<HTMLElement>("[data-sentence-index]");
+        let text = "";
+        els.forEach((el) => {
+          const page = Math.floor(el.offsetLeft / pageWidth);
+          if (page === currentPageRef.current) {
+            text += (el.textContent || el.innerText || "") + " ";
+          }
+        });
+        return text.trim();
       },
     }),
     [animateTurn, getSentencePage, setPage, pageWidth]

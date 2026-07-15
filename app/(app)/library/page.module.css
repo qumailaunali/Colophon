@@ -9,11 +9,47 @@
   align-items: center;
   justify-content: space-between;
   margin-bottom: 28px;
+  flex-wrap: wrap;
+  gap: 16px;
 }
 
 .header h1 {
   color: var(--color-paper);
   font-size: 1.8rem;
+  margin: 0;
+}
+
+.tabContainer {
+  display: flex;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(243, 238, 224, 0.08);
+  border-radius: var(--radius-sm);
+  padding: 3px;
+  gap: 4px;
+}
+
+.tabButton {
+  background: none;
+  border: none;
+  color: rgba(243, 238, 224, 0.55);
+  padding: 6px 14px;
+  font-family: var(--font-ui);
+  font-size: 0.8rem;
+  font-weight: 500;
+  border-radius: calc(var(--radius-sm) - 2px);
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.tabButton:hover {
+  color: var(--color-paper);
+}
+
+.tabButtonActive {
+  background: rgba(201, 162, 39, 0.15);
+  color: var(--color-gold);
+  border: 1px solid rgba(201, 162, 39, 0.3);
+  font-weight: 600;
 }
 
 .addButton {
@@ -28,6 +64,7 @@
   letter-spacing: 0.04em;
   font-weight: 600;
   cursor: pointer;
+  transition: background 0.2s;
 }
 
 .addButton:hover {
@@ -40,3 +77,260 @@
   padding: 60px 0;
   text-align: center;
 }
+
+/* Open Library Grid & Book Cards */
+.openLibraryGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 28px;
+  margin-top: 10px;
+}
+
+.openBookCard {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(243, 238, 224, 0.06);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+  display: flex;
+  flex-direction: column;
+}
+
+.openBookCard:hover {
+  transform: translateY(-2px);
+  border-color: var(--color-gold);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.openCoverWrap {
+  position: relative;
+  aspect-ratio: 2 / 3;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.01);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-bottom: 1px solid rgba(243, 238, 224, 0.05);
+}
+
+.openCoverImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.openCoverPlaceholder {
+  font-size: 3rem;
+  opacity: 0.2;
+}
+
+.openBookInfo {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.openBookTitle {
+  font-family: var(--font-display);
+  font-weight: bold;
+  font-size: 0.9rem;
+  color: var(--color-paper);
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.openBookAuthor {
+  font-family: var(--font-ui);
+  font-size: 0.76rem;
+  color: rgba(243, 238, 224, 0.6);
+  margin-bottom: 16px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.importButton {
+  margin-top: auto;
+  background: rgba(243, 238, 224, 0.06);
+  border: 1px solid rgba(243, 238, 224, 0.15);
+  color: var(--color-paper);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  font-family: var(--font-ui);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.importButton:hover:not(:disabled) {
+  background: rgba(201, 162, 39, 0.12);
+  border-color: var(--color-gold);
+  color: var(--color-gold);
+}
+
+.importButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.spinnerInline {
+  font-style: italic;
+  opacity: 0.85;
+}
+
+/* Admin Dashboard Panel */
+.adminDashboard {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 36px;
+  margin-top: 10px;
+}
+
+.adminSection {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(243, 238, 224, 0.05);
+  border-radius: var(--radius-md);
+  padding: 24px;
+}
+
+.adminSection h2 {
+  font-size: 1.15rem;
+  color: var(--color-gold);
+  margin-top: 0;
+  margin-bottom: 6px;
+}
+
+.sectionDesc {
+  font-size: 0.8rem;
+  color: rgba(243, 238, 224, 0.55);
+  margin-top: 0;
+  margin-bottom: 20px;
+}
+
+.adminTable {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid rgba(243, 238, 224, 0.06);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.adminRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 18px;
+  border-bottom: 1px solid rgba(243, 238, 224, 0.05);
+  gap: 16px;
+}
+
+.adminRow:last-child {
+  border-bottom: none;
+}
+
+.adminRowMain {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.adminBookTitle {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--color-paper);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.adminBookAuthor {
+  font-size: 0.76rem;
+  color: rgba(243, 238, 224, 0.5);
+}
+
+.adminActionButton {
+  background: rgba(201, 162, 39, 0.12);
+  border: 1px solid rgba(201, 162, 39, 0.3);
+  color: var(--color-gold);
+  border-radius: var(--radius-sm);
+  padding: 6px 12px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, opacity 0.2s;
+  white-space: nowrap;
+}
+
+.adminActionButton:hover:not(:disabled) {
+  background: rgba(201, 162, 39, 0.22);
+}
+
+.adminActionButton:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.adminDangerButton {
+  background: rgba(220, 38, 38, 0.12);
+  border-color: rgba(220, 38, 38, 0.3);
+  color: #ef4444;
+}
+
+.adminDangerButton:hover:not(:disabled) {
+  background: rgba(220, 38, 38, 0.22);
+}
+
+.emptyStateTable {
+  padding: 24px;
+  text-align: center;
+  color: rgba(243, 238, 224, 0.35);
+  font-size: 0.8rem;
+  font-style: italic;
+}
+
+/* Empty Catalog View */
+.emptyStateContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 24px;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.01);
+  border: 1px dashed rgba(243, 238, 224, 0.08);
+  border-radius: var(--radius-md);
+  margin-top: 10px;
+}
+
+.emptyStateIcon {
+  font-size: 3rem;
+  margin-bottom: 16px;
+  opacity: 0.35;
+}
+
+.emptyStateTitle {
+  font-size: 1.1rem;
+  color: var(--color-paper);
+  margin: 0 0 6px 0;
+}
+
+.emptyStateText {
+  font-size: 0.82rem;
+  color: rgba(243, 238, 224, 0.5);
+  margin: 0;
+  max-width: 320px;
+}
+

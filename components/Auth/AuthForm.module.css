@@ -109,3 +109,43 @@
   color: var(--color-ribbon);
   text-decoration: underline;
 }
+
+.passwordContainer {
+  position: relative;
+  display: flex;
+  width: 100%;
+}
+
+.passwordContainer input {
+  width: 100%;
+  padding-right: 40px;
+}
+
+.togglePassword {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-ink-soft);
+  transition: color 0.15s ease, opacity 0.15s ease;
+  border-radius: var(--radius-sm);
+}
+
+.togglePassword:hover {
+  color: var(--color-ink);
+}
+
+.togglePassword:focus-visible {
+  outline: 2px solid var(--color-gold);
+}
+
+.togglePassword svg {
+  display: block;
+}
