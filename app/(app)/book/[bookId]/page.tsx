@@ -239,6 +239,25 @@ export default function BookReaderPage() {
     }
   }
 
+  function handlePageChange(page: number, pageCount: number) {
+    setPageInfo({ page, pageCount });
+
+    const pane = readerPaneRef.current;
+    if (pane) {
+      const sentenceIndex = pane.getFirstSentenceOnPage();
+
+      if (!ttsController.isPlaying) {
+        setCurrentSentenceIndex(sentenceIndex);
+      }
+
+      updateProgress({
+        spineIndex: currentSpineIndex,
+        sentenceIndex,
+        scrollOrPageOffset: page,
+      });
+    }
+  }
+
   useKeyboardShortcuts({
     onPrevPage: handlePrevPage,
     onNextPage: handleNextPage,
@@ -322,13 +341,12 @@ export default function BookReaderPage() {
   const chapterWordCounts = useMemo(() => chapters.map((c) => chapterWordCount(c)), [chapters]);
 
   const summary = useMemo(() => {
-    if (!chapters.length || currentSentenceIndex == null) return null;
-    const wordsIntoChapter = wordsIntoChapterAtSentence(
-      chapters[currentSpineIndex],
-      currentSentenceIndex
-    );
+    if (!chapters.length) return null;
+    const chapterWordCountVal = chapterWordCounts[currentSpineIndex] ?? 0;
+    const fraction = pageInfo.pageCount > 0 ? pageInfo.page / pageInfo.pageCount : 0;
+    const wordsIntoChapter = chapterWordCountVal * fraction;
     return computeProgressSummary(chapterWordCounts, currentSpineIndex, wordsIntoChapter);
-  }, [chapters, chapterWordCounts, currentSpineIndex, currentSentenceIndex]);
+  }, [chapters, chapterWordCounts, currentSpineIndex, pageInfo.page, pageInfo.pageCount]);
 
   const currentChapterHighlights = useMemo(
     () => highlights.filter((h) => h.spine_index === currentSpineIndex),
@@ -437,7 +455,7 @@ export default function BookReaderPage() {
                 currentSentenceIndex={currentSentenceIndex}
                 highlights={currentChapterHighlights}
                 reducedMotion={reducedMotion}
-                onPageChange={(page, pageCount) => setPageInfo({ page, pageCount })}
+                onPageChange={handlePageChange}
                 onSentenceClick={handleSentenceClick}
                 onSelectionCommit={setPendingSelection}
                 onPrevPage={handlePrevPage}
