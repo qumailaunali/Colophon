@@ -377,13 +377,22 @@ export default function BookReaderPage() {
       {!focusMode && (
         <div className={styles.topBar}>
           <Link href="/library" className={styles.backLink}>
-            ‹ Library
+            ‹ <span className={styles.desktopText}>Library</span>
           </Link>
           <div className={styles.bookTitle}>{book.title}</div>
           <div className={styles.topActions}>
-            <button onClick={() => setShowSearch(true)}>Search</button>
-            <Link href={`/book/${book.id}/highlights`}>Highlights</Link>
-            <Link href={`/book/${book.id}/bookmarks`}>Bookmarks</Link>
+            <button onClick={() => setShowSearch(true)} aria-label="Search" title="Search">
+              <span className={styles.desktopText}>Search</span>
+              <span className={styles.mobileIcon}>🔍</span>
+            </button>
+            <Link href={`/book/${book.id}/highlights`} aria-label="Highlights" title="Highlights">
+              <span className={styles.desktopText}>Highlights</span>
+              <span className={styles.mobileIcon}>🖊</span>
+            </Link>
+            <Link href={`/book/${book.id}/bookmarks`} aria-label="Bookmarks" title="Bookmarks">
+              <span className={styles.desktopText}>Bookmarks</span>
+              <span className={styles.mobileIcon}>🔖</span>
+            </Link>
             <button
               onClick={toggleBookmark}
               className={isCurrentPageBookmarked ? styles.bookmarkActive : ""}
@@ -392,12 +401,13 @@ export default function BookReaderPage() {
             >
               {isCurrentPageBookmarked ? "★" : "☆"}
             </button>
-            <button onClick={() => setShowSettings(true)}>Aa</button>
+            <button onClick={() => setShowSettings(true)} aria-label="Settings" title="Settings">Aa</button>
             <button onClick={toggleFullscreen} aria-label="Toggle fullscreen" title="Toggle fullscreen">
               {isFullscreen ? "⤡" : "⛶"}
             </button>
             <button onClick={() => setFocusMode(true)} aria-label="Focus mode" title="Focus mode: hide sidebar and controls">
-              Focus
+              <span className={styles.desktopText}>Focus</span>
+              <span className={styles.mobileIcon}>👁</span>
             </button>
           </div>
         </div>

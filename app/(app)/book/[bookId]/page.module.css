@@ -318,3 +318,22 @@
   color: var(--color-gold) !important;
 }
 
+.mobileIcon {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .bookTitle {
+    display: none;
+  }
+  .desktopText {
+    display: none;
+  }
+  .mobileIcon {
+    display: inline-block;
+    font-size: 0.9rem;
+    line-height: 1;
+  }
+}
+
+
