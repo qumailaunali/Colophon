@@ -125,11 +125,6 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
                 <div className={styles.taglineMobile}>Your library, read aloud</div>
               </div>
             </div>
-            <div className={styles.mobileFeaturesTagline}>
-              <span>✨ AI Summaries</span>
-              <span>🎙️ Premium Voices</span>
-              <span>🎴 3D Flashcards</span>
-            </div>
           </div>
 
           <h2 className={styles.cardTitle}>{mode === "login" ? "Sign In" : "Create Account"}</h2>
@@ -222,6 +217,14 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
               </button>
             )}
           </form>
+
+          <div className={styles.mobileFeaturesTagline}>
+            <span>✨ AI Summaries</span>
+            <span className={styles.taglineDot}>•</span>
+            <span>🎙️ Premium Voices</span>
+            <span className={styles.taglineDot}>•</span>
+            <span>🎴 3D Flashcards</span>
+          </div>
 
           <div className={styles.switch}>
             {mode === "login" ? (
