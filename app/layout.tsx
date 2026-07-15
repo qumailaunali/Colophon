@@ -24,6 +24,8 @@ export const metadata: Metadata = {
   description: "A personal EPUB reader with AI read-aloud.",
 };
 
+import { PwaRegister } from "@/components/PwaRegister";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -31,7 +33,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${fraunces.variable} ${literata.variable} ${plexMono.variable}`}>
-      <body>{children}</body>
+      <body>
+        <PwaRegister />
+        {children}
+      </body>
     </html>
   );
 }
