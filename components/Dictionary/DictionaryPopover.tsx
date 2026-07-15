@@ -49,15 +49,38 @@ export function DictionaryPopover({ word, onClose }: DictionaryPopoverProps) {
       return;
     }
 
-    fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${cleanWord}`)
+    fetch(`https://en.wiktionary.org/api/rest_v1/page/definition/${cleanWord}`)
       .then((res) => {
-        if (!res.ok) throw new Error("Word not found in dictionary.");
+        if (!res.ok) throw new Error("Word not found in Wiktionary.");
         return res.json();
       })
       .then((data) => {
         if (!active) return;
-        if (Array.isArray(data) && data.length > 0) {
-          setEntry(data[0]);
+
+        // Wiktionary API returns definitions grouped by language keys (e.g. "en")
+        const langKeys = Object.keys(data);
+        const langData = data.en || data[langKeys[0]];
+
+        if (Array.isArray(langData) && langData.length > 0) {
+          // Helper to strip HTML tags from Wiktionary definition strings
+          const stripHtml = (htmlStr: string) => {
+            if (!htmlStr) return "";
+            return htmlStr.replace(/<[^>]*>/g, "").trim();
+          };
+
+          const mappedEntry: DictionaryEntry = {
+            word: cleanWord,
+            phonetic: undefined,
+            phonetics: [],
+            meanings: langData.map((meaning: any) => ({
+              partOfSpeech: meaning.partOfSpeech || "word",
+              definitions: (meaning.definitions || []).map((def: any) => ({
+                definition: stripHtml(def.definition),
+                example: Array.isArray(def.examples) && def.examples.length > 0 ? stripHtml(def.examples[0]) : undefined,
+              })),
+            })),
+          };
+          setEntry(mappedEntry);
         } else {
           throw new Error("No definition available.");
         }
