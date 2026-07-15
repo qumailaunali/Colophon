@@ -58,6 +58,7 @@ interface ReaderPaneProps {
   onSelectionCommit: (selection: SelectionCommit) => void;
   onPrevPage?: () => void;
   onNextPage?: () => void;
+  onWordLookup?: (word: string) => void;
 }
 
 export const ReaderPane = forwardRef<ReaderPaneHandle, ReaderPaneProps>(function ReaderPane(
@@ -77,12 +78,56 @@ export const ReaderPane = forwardRef<ReaderPaneHandle, ReaderPaneProps>(function
     onSelectionCommit,
     onPrevPage,
     onNextPage,
+    onWordLookup,
   },
   ref
 ) {
   const viewportRef = useRef<HTMLDivElement>(null);
   const columnsRef = useRef<HTMLDivElement>(null);
   const overlayHostRef = useRef<HTMLDivElement>(null);
+
+  const longPressTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const touchStartPosRef = useRef<{ x: number; y: number } | null>(null);
+
+  const cancelLongPressTimer = useCallback(() => {
+    if (longPressTimeoutRef.current) {
+      clearTimeout(longPressTimeoutRef.current);
+      longPressTimeoutRef.current = null;
+    }
+  }, []);
+
+  const startLongPressTimer = useCallback((clientX: number, clientY: number) => {
+    cancelLongPressTimer();
+    touchStartPosRef.current = { x: clientX, y: clientY };
+    longPressTimeoutRef.current = setTimeout(() => {
+      const word = getWordAtPoint(clientX, clientY);
+      if (word && word.length > 1) {
+        onWordLookup?.(word);
+      }
+      touchStartPosRef.current = null;
+    }, 600);
+  }, [cancelLongPressTimer, onWordLookup]);
+
+  useEffect(() => {
+    return () => {
+      cancelLongPressTimer();
+    };
+  }, [cancelLongPressTimer]);
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (e.button !== 0) return;
+    startLongPressTimer(e.clientX, e.clientY);
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!touchStartPosRef.current) return;
+    const dx = Math.abs(e.clientX - touchStartPosRef.current.x);
+    const dy = Math.abs(e.clientY - touchStartPosRef.current.y);
+    if (dx > 10 || dy > 10) {
+      cancelLongPressTimer();
+      touchStartPosRef.current = null;
+    }
+  };
 
   const { pageWidth, pageCount, getSentencePage } = usePagination(
     viewportRef,
@@ -231,6 +276,9 @@ export const ReaderPane = forwardRef<ReaderPaneHandle, ReaderPaneProps>(function
   }
 
   function handleMouseUp() {
+    cancelLongPressTimer();
+    touchStartPosRef.current = null;
+
     const sel = window.getSelection();
     if (!sel || sel.isCollapsed || !sel.toString().trim()) return;
     const anchorEl = (sel.anchorNode?.parentElement)?.closest("[data-sentence-index]");
@@ -249,8 +297,23 @@ export const ReaderPane = forwardRef<ReaderPaneHandle, ReaderPaneProps>(function
   const touchStartX = useRef<number | null>(null);
   function handleTouchStart(e: React.TouchEvent) {
     touchStartX.current = e.touches[0].clientX;
+    const t = e.touches[0];
+    startLongPressTimer(t.clientX, t.clientY);
+  }
+  function handleTouchMove(e: React.TouchEvent) {
+    if (!touchStartPosRef.current) return;
+    const t = e.touches[0];
+    const dx = Math.abs(t.clientX - touchStartPosRef.current.x);
+    const dy = Math.abs(t.clientY - touchStartPosRef.current.y);
+    if (dx > 10 || dy > 10) {
+      cancelLongPressTimer();
+      touchStartPosRef.current = null;
+    }
   }
   function handleTouchEnd(e: React.TouchEvent) {
+    cancelLongPressTimer();
+    touchStartPosRef.current = null;
+
     if (touchStartX.current == null) return;
     const delta = e.changedTouches[0].clientX - touchStartX.current;
     touchStartX.current = null;
@@ -287,7 +350,10 @@ export const ReaderPane = forwardRef<ReaderPaneHandle, ReaderPaneProps>(function
           }}
           onClick={handleClick}
           onMouseUp={handleMouseUp}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
           onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
           dangerouslySetInnerHTML={{ __html: html }}
         />
@@ -297,3 +363,42 @@ export const ReaderPane = forwardRef<ReaderPaneHandle, ReaderPaneProps>(function
     </div>
   );
 });
+
+function getWordAtPoint(x: number, y: number): string | null {
+  let range: Range | null = null;
+  let textNode: Node | null = null;
+  let offset = 0;
+
+  if (typeof document === "undefined") return null;
+
+  if (document.caretRangeFromPoint) {
+    range = document.caretRangeFromPoint(x, y);
+    if (range) {
+      textNode = range.startContainer;
+      offset = range.startOffset;
+    }
+  } else if ((document as any).caretPositionFromPoint) {
+    const position = (document as any).caretPositionFromPoint(x, y);
+    if (position) {
+      textNode = position.offsetNode;
+      offset = position.offset;
+    }
+  }
+
+  if (textNode && textNode.nodeType === Node.TEXT_NODE) {
+    const text = textNode.nodeValue || "";
+    const isWordChar = (char: string) => /[a-zA-Z0-9'-]/.test(char);
+
+    let start = offset;
+    while (start > 0 && isWordChar(text[start - 1])) {
+      start--;
+    }
+    let end = offset;
+    while (end < text.length && isWordChar(text[end])) {
+      end++;
+    }
+    const word = text.slice(start, end);
+    return word.trim();
+  }
+  return null;
+}

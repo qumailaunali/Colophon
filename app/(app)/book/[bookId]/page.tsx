@@ -24,6 +24,7 @@ import { ProgressIndicator } from "@/components/ProgressIndicator/ProgressIndica
 import { SettingsPanel } from "@/components/SettingsPanel/SettingsPanel";
 import { SearchPanel } from "@/components/SearchPanel/SearchPanel";
 import { HighlightPopover } from "@/components/Highlights/HighlightPopover";
+import { DictionaryPopover } from "@/components/Dictionary/DictionaryPopover";
 import styles from "./page.module.css";
 
 export default function BookReaderPage() {
@@ -44,6 +45,7 @@ export default function BookReaderPage() {
 
   const [showSearch, setShowSearch] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [lookupWord, setLookupWord] = useState<string | null>(null);
   const [reducedMotion, setReducedMotion] = useState(false);
   const [pageInfo, setPageInfo] = useState({ page: 0, pageCount: 1 });
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -460,6 +462,10 @@ export default function BookReaderPage() {
                 onSelectionCommit={setPendingSelection}
                 onPrevPage={handlePrevPage}
                 onNextPage={handleNextPage}
+                onWordLookup={(word) => {
+                  window.getSelection()?.removeAllRanges();
+                  setLookupWord(word);
+                }}
               />
             )}
           </div>
@@ -547,6 +553,13 @@ export default function BookReaderPage() {
           snippet={pendingSelection.text}
           onSave={saveHighlight}
           onCancel={() => setPendingSelection(null)}
+        />
+      )}
+
+      {lookupWord && (
+        <DictionaryPopover
+          word={lookupWord}
+          onClose={() => setLookupWord(null)}
         />
       )}
     </div>
