@@ -95,13 +95,8 @@ select {
   background-color: rgba(201, 162, 39, 0.18);
 }
 
-[data-speaking="true"] {
-  background-color: rgba(201, 162, 39, 0.3) !important;
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .sentence,
-  [data-speaking="true"] {
+  .sentence {
     transition: none;
   }
 }

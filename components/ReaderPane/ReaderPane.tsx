@@ -51,7 +51,6 @@ interface ReaderPaneProps {
   lineSpacing: number;
   theme: ReaderTheme;
   currentSentenceIndex: number | null;
-  currentWordBoundary?: { charIndex: number; charLength: number } | null;
   highlights: HighlightRow[];
   reducedMotion: boolean;
   initialPage?: number;
@@ -72,7 +71,6 @@ export const ReaderPane = forwardRef<ReaderPaneHandle, ReaderPaneProps>(function
     lineSpacing,
     theme,
     currentSentenceIndex,
-    currentWordBoundary,
     highlights,
     reducedMotion,
     initialPage,
@@ -253,22 +251,6 @@ export const ReaderPane = forwardRef<ReaderPaneHandle, ReaderPaneProps>(function
     [animateTurn, getSentencePage, setPage, pageWidth]
   );
 
-  // Toggle the currently-spoken sentence highlight
-  useEffect(() => {
-    const columns = columnsRef.current;
-    if (!columns) return;
-
-    columns.querySelectorAll('[data-speaking="true"]').forEach((el) => {
-      el.removeAttribute("data-speaking");
-    });
-
-    if (currentSentenceIndex != null) {
-      columns.querySelectorAll(`[data-sentence-index="${currentSentenceIndex}"]`).forEach((el: any) => {
-        el.setAttribute("data-speaking", "true");
-      });
-    }
-  }, [currentSentenceIndex, html]);
-
   // Apply saved highlights as translucent background colors.
   useEffect(() => {
     const columns = columnsRef.current;
@@ -356,6 +338,15 @@ export const ReaderPane = forwardRef<ReaderPaneHandle, ReaderPaneProps>(function
   return (
     <div ref={viewportRef} className={styles.viewport} data-reader-theme={theme}>
       <div className={styles.clipContainer}>
+        {/* Highlighting the actively-spoken sentence via a scoped stylesheet
+            (rather than imperatively mutating the dangerouslySetInnerHTML
+            subtree below) means it's driven purely by React re-rendering
+            this text — it can never go stale relative to whatever DOM the
+            browser is currently showing, no matter when/why that subtree
+            gets reset. */}
+        {Number.isInteger(currentSentenceIndex) && (
+          <style>{`[data-sentence-index="${currentSentenceIndex}"] { background-color: rgba(201, 162, 39, 0.45) !important; }`}</style>
+        )}
         <div
           ref={columnsRef}
           className={styles.columns}

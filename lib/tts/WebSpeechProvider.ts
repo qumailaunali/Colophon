@@ -28,7 +28,6 @@ export class WebSpeechProvider implements TTSProvider {
     if (this.activeUtterance) {
       this.activeUtterance.onend = null;
       this.activeUtterance.onerror = null;
-      this.activeUtterance.onboundary = null;
     }
     synth.cancel();
 
@@ -58,13 +57,6 @@ export class WebSpeechProvider implements TTSProvider {
       callbacks.onEnd();
     };
 
-    utterance.onboundary = (event) => {
-      if (wasInterrupted || this.activeUtterance !== utterance) return;
-      if (event.name === "word" && callbacks.onBoundary) {
-        callbacks.onBoundary(event.charIndex, event.charLength || 0);
-      }
-    };
-
     // A brief timeout gives Chrome's background process time to fully resolve the cancel() event
     // before we push the new utterance into the playback queue.
     setTimeout(() => {
@@ -85,7 +77,6 @@ export class WebSpeechProvider implements TTSProvider {
     if (this.activeUtterance) {
       this.activeUtterance.onend = null;
       this.activeUtterance.onerror = null;
-      this.activeUtterance.onboundary = null;
       this.activeUtterance = null;
     }
     window.speechSynthesis.cancel();

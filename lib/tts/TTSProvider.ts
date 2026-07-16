@@ -13,7 +13,6 @@ export interface TTSUtteranceOptions {
 export interface TTSSpeakCallbacks {
   onEnd: () => void;
   onError: (error: unknown) => void;
-  onBoundary?: (charIndex: number, charLength: number) => void;
 }
 
 /**
