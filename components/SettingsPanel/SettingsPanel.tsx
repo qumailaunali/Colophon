@@ -25,6 +25,23 @@ interface SettingsPanelProps {
 export function SettingsPanel({ settings, onChange }: SettingsPanelProps) {
   return (
     <div className={styles.panel}>
+      <div className={styles.panelHeader}>
+        <span className={styles.panelTitle}>Reader Fonts</span>
+        <button
+          type="button"
+          className={styles.resetSettingsButton}
+          onClick={() =>
+            onChange({
+              fontFamily: "Literata",
+              fontSize: 18,
+              lineSpacing: 1.6,
+            })
+          }
+        >
+          Reset Fonts
+        </button>
+      </div>
+
       <div className={styles.field}>
         <label>Font family</label>
         <select
@@ -45,7 +62,7 @@ export function SettingsPanel({ settings, onChange }: SettingsPanelProps) {
         <div className={styles.row}>
           <input
             type="range"
-            min={14}
+            min={10}
             max={28}
             step={1}
             value={settings.fontSize}

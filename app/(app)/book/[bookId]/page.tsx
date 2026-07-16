@@ -413,7 +413,14 @@ export default function BookReaderPage() {
     if (pane) {
       const sentenceIndex = pane.getFirstSentenceOnPage();
 
-      if (!ttsController.isPlaying) {
+      // Read the ref (not the `isPlaying` state) — this handler can run
+      // synchronously inside the same tick as `ttsController.play()`
+      // (goToSentencePage -> setPage -> onPageChange), before React has
+      // re-rendered with the just-set `isPlaying` state. The ref updates
+      // synchronously, so it never gives a stale answer that would let
+      // this overwrite the sentence TTS is actively speaking with
+      // whatever sentence happens to be first on the page.
+      if (!ttsController.isPlayingRef.current) {
         setCurrentSentenceIndex(sentenceIndex);
       }
 

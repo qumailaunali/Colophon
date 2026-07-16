@@ -169,6 +169,7 @@ export function useTTSController({ settings, onSentenceChange, onChapterEnd }: U
 
   return {
     isPlaying,
+    isPlayingRef,
     voices,
     lastError,
     currentWordBoundary,

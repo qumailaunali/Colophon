@@ -5,6 +5,42 @@
   font-family: var(--font-ui);
 }
 
+.panelHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--color-paper-dark);
+  padding-bottom: 8px;
+  margin-bottom: -4px;
+}
+
+.panelTitle {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-ink);
+}
+
+.resetSettingsButton {
+  background: transparent;
+  border: 1px solid var(--color-gold);
+  color: var(--color-gold);
+  border-radius: var(--radius-sm);
+  padding: 3px 8px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.resetSettingsButton:hover {
+  background: var(--color-gold);
+  color: var(--color-ink);
+}
+
 .field {
   display: flex;
   flex-direction: column;

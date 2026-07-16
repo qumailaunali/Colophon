@@ -183,19 +183,43 @@
   text-transform: none;
 }
 
-.popupSlider {
+.popupSliderField {
   display: flex;
   flex-direction: column;
   gap: 6px;
+}
+
+.popupSliderField input[type="range"] {
+  width: 100%;
+  accent-color: var(--color-gold);
+}
+
+.popupLabelRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   font-size: 0.7rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--color-ink-soft);
 }
 
-.popupSlider input[type="range"] {
-  width: 100%;
-  accent-color: var(--color-gold);
+.resetLinkButton {
+  background: transparent;
+  border: none;
+  color: var(--color-gold);
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.2s ease;
+}
+
+.resetLinkButton:hover {
+  color: #b6911f;
+  text-decoration: underline;
 }
 
 .popupClose {

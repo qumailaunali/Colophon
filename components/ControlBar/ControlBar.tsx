@@ -171,8 +171,17 @@ export function ControlBar({
               </select>
             </label>
 
-            <label className={styles.popupSlider}>
-              Speed {speechRate.toFixed(2)}x
+            <div className={styles.popupSliderField}>
+              <div className={styles.popupLabelRow}>
+                <span>Speed {speechRate.toFixed(2)}x</span>
+                <button
+                  type="button"
+                  className={styles.resetLinkButton}
+                  onClick={() => onRateChange(1.0)}
+                >
+                  Reset
+                </button>
+              </div>
               <input
                 type="range"
                 min={0.5}
@@ -181,9 +190,19 @@ export function ControlBar({
                 value={speechRate}
                 onChange={(e) => onRateChange(Number(e.target.value))}
               />
-            </label>
-            <label className={styles.popupSlider}>
-              Pitch {speechPitch.toFixed(2)}
+            </div>
+
+            <div className={styles.popupSliderField}>
+              <div className={styles.popupLabelRow}>
+                <span>Pitch {speechPitch.toFixed(2)}</span>
+                <button
+                  type="button"
+                  className={styles.resetLinkButton}
+                  onClick={() => onPitchChange(1.0)}
+                >
+                  Reset
+                </button>
+              </div>
               <input
                 type="range"
                 min={0}
@@ -192,9 +211,19 @@ export function ControlBar({
                 value={speechPitch}
                 onChange={(e) => onPitchChange(Number(e.target.value))}
               />
-            </label>
-            <label className={styles.popupSlider}>
-              Volume {Math.round(speechVolume * 100)}%
+            </div>
+
+            <div className={styles.popupSliderField}>
+              <div className={styles.popupLabelRow}>
+                <span>Volume {Math.round(speechVolume * 100)}%</span>
+                <button
+                  type="button"
+                  className={styles.resetLinkButton}
+                  onClick={() => onVolumeChange(1.0)}
+                >
+                  Reset
+                </button>
+              </div>
               <input
                 type="range"
                 min={0}
@@ -203,7 +232,7 @@ export function ControlBar({
                 value={speechVolume}
                 onChange={(e) => onVolumeChange(Number(e.target.value))}
               />
-            </label>
+            </div>
 
             <button className={styles.popupClose} onClick={() => setShowSpeechSettings(false)}>
               Done

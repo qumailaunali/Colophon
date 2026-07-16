@@ -99,19 +99,6 @@ select {
   background-color: rgba(201, 162, 39, 0.3) !important;
 }
 
-.colophon-word {
-  transition: background-color 0.1s ease, color 0.1s ease;
-  border-radius: 2px;
-  padding: 0 1px;
-}
-
-[data-speaking="true"] [data-active-word="true"] {
-  background-color: var(--color-gold) !important;
-  color: var(--color-ink) !important;
-  border-radius: 2px;
-  box-shadow: 0 1px 5px rgba(201, 162, 39, 0.4);
-}
-
 @media (prefers-reduced-motion: reduce) {
   .sentence,
   [data-speaking="true"] {

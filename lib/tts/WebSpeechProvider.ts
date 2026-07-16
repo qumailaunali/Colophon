@@ -1,6 +1,8 @@
 import type { TTSProvider, TTSSpeakCallbacks, TTSUtteranceOptions, TTSVoice } from "./TTSProvider";
 
 export class WebSpeechProvider implements TTSProvider {
+  private activeUtterance: SpeechSynthesisUtterance | null = null;
+
   async listVoices(): Promise<TTSVoice[]> {
     const synth = window.speechSynthesis;
     const toVoices = (voices: SpeechSynthesisVoice[]) =>
@@ -23,9 +25,15 @@ export class WebSpeechProvider implements TTSProvider {
 
   speak(text: string, options: TTSUtteranceOptions, callbacks: TTSSpeakCallbacks): void {
     const synth = window.speechSynthesis;
+    if (this.activeUtterance) {
+      this.activeUtterance.onend = null;
+      this.activeUtterance.onerror = null;
+      this.activeUtterance.onboundary = null;
+    }
     synth.cancel();
 
-    const utterance = new SpeechSynthesisUtterance(text);
+    this.activeUtterance = new SpeechSynthesisUtterance(text);
+    const utterance = this.activeUtterance;
     utterance.rate = options.rate;
     utterance.pitch = options.pitch;
     utterance.volume = options.volume;
@@ -35,19 +43,34 @@ export class WebSpeechProvider implements TTSProvider {
       if (voice) utterance.voice = voice;
     }
 
-    utterance.onend = () => callbacks.onEnd();
+    let wasInterrupted = false;
+
     utterance.onerror = (event) => {
-      if (event.error === "interrupted" || event.error === "canceled") return;
+      if (event.error === "interrupted" || event.error === "canceled") {
+        wasInterrupted = true;
+        return;
+      }
       callbacks.onError(event.error);
     };
 
+    utterance.onend = () => {
+      if (wasInterrupted || this.activeUtterance !== utterance) return;
+      callbacks.onEnd();
+    };
+
     utterance.onboundary = (event) => {
+      if (wasInterrupted || this.activeUtterance !== utterance) return;
       if (event.name === "word" && callbacks.onBoundary) {
         callbacks.onBoundary(event.charIndex, event.charLength || 0);
       }
     };
 
-    synth.speak(utterance);
+    // A brief timeout gives Chrome's background process time to fully resolve the cancel() event
+    // before we push the new utterance into the playback queue.
+    setTimeout(() => {
+      if (this.activeUtterance !== utterance) return;
+      synth.speak(utterance);
+    }, 120);
   }
 
   pause(): void {
@@ -59,6 +82,12 @@ export class WebSpeechProvider implements TTSProvider {
   }
 
   stop(): void {
+    if (this.activeUtterance) {
+      this.activeUtterance.onend = null;
+      this.activeUtterance.onerror = null;
+      this.activeUtterance.onboundary = null;
+      this.activeUtterance = null;
+    }
     window.speechSynthesis.cancel();
   }
 
