@@ -103,21 +103,25 @@ export function useTTSController({ settings, onSentenceChange, onChapterEnd }: U
       }
     );
 
-    // Prefetch the next speakable sentence if the provider supports it
+    // Prefetch the next 2 speakable sentences if the provider supports it
     if (providerRef.current.prefetch) {
-      let nextIndex = sentenceIndexRef.current + 1;
-      let nextSentence = chapter.sentences.find((s) => s.index === nextIndex);
-      while (nextSentence && !hasSpeakableContent(nextSentence.text)) {
-        nextIndex += 1;
-        nextSentence = chapter.sentences.find((s) => s.index === nextIndex);
-      }
-      if (nextSentence) {
-        providerRef.current.prefetch(nextSentence.text, {
-          rate: settingsRef.current.speechRate,
-          pitch: settingsRef.current.speechPitch,
-          volume: settingsRef.current.speechVolume,
-          voiceName: settingsRef.current.voiceName,
-        });
+      let indexOffset = 1;
+      let prefetchedCount = 0;
+      while (prefetchedCount < 2) {
+        let nextIndex = sentenceIndexRef.current + indexOffset;
+        let nextSentence = chapter.sentences.find((s) => s.index === nextIndex);
+        if (!nextSentence) break;
+
+        if (hasSpeakableContent(nextSentence.text)) {
+          providerRef.current.prefetch(nextSentence.text, {
+            rate: settingsRef.current.speechRate,
+            pitch: settingsRef.current.speechPitch,
+            volume: settingsRef.current.speechVolume,
+            voiceName: settingsRef.current.voiceName,
+          });
+          prefetchedCount++;
+        }
+        indexOffset++;
       }
     }
   }, [onChapterEnd, onSentenceChange]);

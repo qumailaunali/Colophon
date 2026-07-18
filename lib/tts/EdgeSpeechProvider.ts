@@ -37,7 +37,27 @@ export class EdgeSpeechProvider implements TTSProvider {
   private abortController: AbortController | null = null;
   private voicesCache: TTSVoice[] | null = null;
 
-  private prefetched: PrefetchedAudio | null = null;
+  private prefetchMap: Map<string, PrefetchedAudio> = new Map();
+
+  private getCacheKey(text: string, options: TTSUtteranceOptions): string {
+    return `${text}:${options.voiceName || ""}:${options.pitch}`;
+  }
+
+  private clearPrefetchMap(): void {
+    this.prefetchMap.forEach((pref) => {
+      pref.abortController.abort();
+      if (pref.audio) {
+        pref.audio.onended = null;
+        pref.audio.ontimeupdate = null;
+        pref.audio.onerror = null;
+        pref.audio.pause();
+      }
+      if (pref.url) {
+        URL.revokeObjectURL(pref.url);
+      }
+    });
+    this.prefetchMap.clear();
+  }
 
   async listVoices(): Promise<TTSVoice[]> {
     if (this.voicesCache) return this.voicesCache;
@@ -53,28 +73,28 @@ export class EdgeSpeechProvider implements TTSProvider {
   }
 
   prefetch(text: string, options: TTSUtteranceOptions): void {
-    // If already prefetching the exact same thing, do nothing
-    if (
-      this.prefetched &&
-      this.prefetched.text === text &&
-      this.prefetched.voiceName === options.voiceName &&
-      this.prefetched.pitch === options.pitch
-    ) {
-      return;
-    }
+    const key = this.getCacheKey(text, options);
+    if (this.prefetchMap.has(key)) return;
 
-    // Cancel any existing prefetch
-    if (this.prefetched) {
-      this.prefetched.abortController.abort();
-      if (this.prefetched.audio) {
-        this.prefetched.audio.onended = null;
-        this.prefetched.audio.onerror = null;
-        this.prefetched.audio.pause();
+    // Limit active prefetch queue size to 4 to prevent memory leaks
+    if (this.prefetchMap.size >= 4) {
+      const oldestKey = this.prefetchMap.keys().next().value;
+      if (oldestKey) {
+        const old = this.prefetchMap.get(oldestKey);
+        if (old) {
+          old.abortController.abort();
+          if (old.audio) {
+            old.audio.onended = null;
+            old.audio.ontimeupdate = null;
+            old.audio.onerror = null;
+            old.audio.pause();
+          }
+          if (old.url) {
+            URL.revokeObjectURL(old.url);
+          }
+        }
+        this.prefetchMap.delete(oldestKey);
       }
-      if (this.prefetched.url) {
-        URL.revokeObjectURL(this.prefetched.url);
-      }
-      this.prefetched = null;
     }
 
     const abortController = new AbortController();
@@ -120,7 +140,7 @@ export class EdgeSpeechProvider implements TTSProvider {
       }
     })();
 
-    this.prefetched = pref;
+    this.prefetchMap.set(key, pref);
   }
 
   speak(text: string, options: TTSUtteranceOptions, callbacks: TTSSpeakCallbacks): void {
@@ -162,54 +182,33 @@ export class EdgeSpeechProvider implements TTSProvider {
       let blob: Blob;
       let existingAudio: HTMLAudioElement | undefined;
 
-      // Check if we have a matching prefetched item
-      if (
-        this.prefetched &&
-        this.prefetched.text === text &&
-        this.prefetched.voiceName === options.voiceName &&
-        this.prefetched.pitch === options.pitch
-      ) {
+      const key = this.getCacheKey(text, options);
+      const cached = this.prefetchMap.get(key);
+
+      if (cached) {
         console.log(`[Edge TTS] Prefetch HIT for: "${text.substring(0, 30)}..."`);
         const startTime = Date.now();
         // Wait for prefetch promise to resolve
-        await this.prefetched.promise;
+        await cached.promise;
         console.log(`[Edge TTS] Prefetch promise resolved in ${Date.now() - startTime}ms`);
         
-        if (this.prefetched.url && this.prefetched.blob) {
-          url = this.prefetched.url;
-          blob = this.prefetched.blob;
-          existingAudio = this.prefetched.audio || undefined;
-          // Clear this.prefetched container without revoking the URL, as we are now playing it.
-          this.prefetched = null;
+        if (cached.url && cached.blob) {
+          url = cached.url;
+          blob = cached.blob;
+          existingAudio = cached.audio || undefined;
+          this.prefetchMap.delete(key);
         } else {
           console.warn("[Edge TTS] Prefetch resolved but had no URL/Blob. Falling back to normal fetch.");
-          // Prefetch failed, clean up and do a normal fetch
-          if (this.prefetched.url) {
-            URL.revokeObjectURL(this.prefetched.url);
+          if (cached.url) {
+            URL.revokeObjectURL(cached.url);
           }
-          this.prefetched = null;
+          this.prefetchMap.delete(key);
           return this.doNormalSpeakFetch(text, options, callbacks, controller, retriesLeft);
         }
       } else {
-        // No match, or no prefetch. Clean up any existing prefetch.
-        if (this.prefetched) {
-          console.warn(
-            `[Edge TTS] Prefetch MISMATCH/BYPASS.\nExpected: "${this.prefetched.text.substring(0, 30)}..."\nRequested: "${text.substring(0, 30)}..."`
-          );
-          this.prefetched.abortController.abort();
-          if (this.prefetched.audio) {
-            this.prefetched.audio.onended = null;
-            this.prefetched.audio.onerror = null;
-            this.prefetched.audio.ontimeupdate = null;
-            this.prefetched.audio.pause();
-          }
-          if (this.prefetched.url) {
-            URL.revokeObjectURL(this.prefetched.url);
-          }
-          this.prefetched = null;
-        } else {
-          console.log(`[Edge TTS] No prefetch exists for: "${text.substring(0, 30)}..."`);
-        }
+        console.log(`[Edge TTS] Prefetch MISS for: "${text.substring(0, 30)}..."`);
+        // Clean up everything else to keep map small and focused
+        this.clearPrefetchMap();
         return this.doNormalSpeakFetch(text, options, callbacks, controller, retriesLeft);
       }
 
@@ -339,19 +338,7 @@ export class EdgeSpeechProvider implements TTSProvider {
       URL.revokeObjectURL(this.objectUrl);
       this.objectUrl = null;
     }
-    if (this.prefetched) {
-      this.prefetched.abortController.abort();
-      if (this.prefetched.audio) {
-        this.prefetched.audio.onended = null;
-        this.prefetched.audio.ontimeupdate = null;
-        this.prefetched.audio.onerror = null;
-        this.prefetched.audio.pause();
-      }
-      if (this.prefetched.url) {
-        URL.revokeObjectURL(this.prefetched.url);
-      }
-      this.prefetched = null;
-    }
+    this.clearPrefetchMap();
   }
 
   pause(): void {

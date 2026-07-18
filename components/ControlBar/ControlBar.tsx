@@ -124,7 +124,6 @@ export function ControlBar({
                 value={ttsProvider}
                 onChange={(e) => onTtsProviderChange(e.target.value as TtsProviderKind)}
               >
-                <option value="webspeech">Browser voice (free)</option>
                 <option value="edge">Edge Neural (free)</option>
                 <option value="azure">Azure Neural (premium)</option>
               </select>
