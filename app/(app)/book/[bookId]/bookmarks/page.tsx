@@ -24,8 +24,7 @@ export default function BookBookmarksPage() {
         .from("bookmarks")
         .select("*")
         .eq("book_id", bookId)
-        .order("spine_index", { ascending: true })
-        .order("scroll_or_page_offset", { ascending: true }),
+        .order("created_at", { ascending: false }),
     ]);
     setBook(bookRow ?? null);
     setBookmarks(bookmarkRows ?? []);

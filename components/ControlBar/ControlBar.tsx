@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import type { TTSVoice } from "@/lib/tts/TTSProvider";
 import type { TtsProviderKind } from "@/lib/supabase/types";
 import styles from "./ControlBar.module.css";
@@ -26,6 +26,8 @@ interface ControlBarProps {
   onVolumeChange: (volume: number) => void;
   sleepMinutesRemaining: number | null;
   onSetSleepTimer: (minutes: number | null) => void;
+  isMusicPlaying: boolean;
+  onToggleMusic: () => void;
 }
 
 export function ControlBar({
@@ -47,45 +49,17 @@ export function ControlBar({
   onVolumeChange,
   sleepMinutesRemaining,
   onSetSleepTimer,
+  isMusicPlaying,
+  onToggleMusic,
 }: ControlBarProps) {
   const [showSpeechSettings, setShowSpeechSettings] = useState(false);
-  const [isMusicPlaying, setIsMusicPlaying] = useState(false);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-
-  const toggleMusic = () => {
-    if (typeof window === "undefined") return;
-
-    if (!audioRef.current) {
-      const audio = new Audio("/Music/Relaxing Music l Piano and Rain Sound 30 Minutes - 3D City Wiew.mp3");
-      audio.loop = true;
-      audio.volume = 0.45;
-      audioRef.current = audio;
-    }
-
-    if (isMusicPlaying) {
-      audioRef.current.pause();
-      setIsMusicPlaying(false);
-    } else {
-      audioRef.current.play()
-        .then(() => setIsMusicPlaying(true))
-        .catch((err) => console.error("Failed to play ambient music:", err));
-    }
-  };
-
-  useEffect(() => {
-    return () => {
-      if (audioRef.current) {
-        audioRef.current.pause();
-      }
-    };
-  }, []);
 
   return (
     <div className={styles.bar}>
       <div className={styles.musicGroup}>
         <button
           className={`${styles.iconButton} ${isMusicPlaying ? styles.musicActive : ""}`}
-          onClick={toggleMusic}
+          onClick={onToggleMusic}
           aria-label={isMusicPlaying ? "Pause ambient music" : "Play ambient music"}
           title="Ambient Reading Music"
         >

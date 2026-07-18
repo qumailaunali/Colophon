@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { LibraryGrid } from "@/components/Library/LibraryGrid";
 import { BookUploadModal } from "@/components/Library/BookUploadModal";
+import { ImportBookModal } from "@/components/Library/ImportBookModal";
 import type { BookRow, ReadingProgressRow } from "@/lib/supabase/types";
 import styles from "./page.module.css";
 
@@ -24,6 +25,7 @@ export default function LibraryPage() {
   const [allUploadedBooks, setAllUploadedBooks] = useState<any[]>([]);
   const [importingBookId, setImportingBookId] = useState<string | null>(null);
   const [adminProcessingId, setAdminProcessingId] = useState<string | null>(null);
+  const [showImportSources, setShowImportSources] = useState(false);
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -320,16 +322,33 @@ export default function LibraryPage() {
             ℹ️ Features
           </button>
           {activeTab === "mine" && (
-            <button className={styles.addButton} onClick={() => setShowUpload(true)}>
-              + Add a book
-            </button>
+            <>
+              <button
+                className={styles.importBookButton}
+                onClick={() => setActiveTab("open")}
+              >
+                Import Book
+              </button>
+              <button className={styles.addButton} onClick={() => setShowUpload(true)}>
+                + Add a book
+              </button>
+            </>
           )}
-          {activeTab === "open" && user?.email === "qumailaunali@gmail.com" && (
-            <button className={styles.addButton} onClick={() => setShowUpload(true)}>
-              + Add to Open Library
-            </button>
-          )}
-        </div>
+          {activeTab === "open" && (
+            <>
+              <button
+                className={styles.wantMoreButton}
+                onClick={() => setShowImportSources(true)}
+              >
+                Want more books?
+              </button>
+              {user?.email === "qumailaunali@gmail.com" && (
+                <button className={styles.addButton} onClick={() => setShowUpload(true)}>
+                  + Add to Open Library
+                </button>
+              )}
+            </>
+          )}</div>
       </div>
 
       {loading ? (
@@ -448,6 +467,12 @@ export default function LibraryPage() {
           mode={activeTab === "open" ? "open" : "private"}
           onClose={() => setShowUpload(false)}
           onUploaded={refresh}
+        />
+      )}
+      
+      {showImportSources && (
+        <ImportBookModal
+          onClose={() => setShowImportSources(false)}
         />
       )}
 

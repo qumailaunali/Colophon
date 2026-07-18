@@ -21,6 +21,55 @@
   background: var(--color-gold);
   border-radius: 3px;
   transition: width 0.3s ease;
+  position: relative;
+}
+
+.interactive .bar {
+  cursor: pointer;
+  overflow: visible;
+  height: 6px;
+  background: rgba(91, 81, 64, 0.15);
+  transition: height 0.15s ease, background 0.15s ease;
+}
+
+.onDark.interactive .bar {
+  background: rgba(243, 238, 224, 0.12);
+}
+
+.interactive .bar:hover,
+.dragging .bar {
+  height: 8px;
+  background: rgba(91, 81, 64, 0.25);
+}
+
+.onDark.interactive .bar:hover,
+.onDark.dragging .bar {
+  background: rgba(243, 238, 224, 0.25);
+}
+
+/* Gold handle indicator shown on hover/drag */
+.fill::after {
+  content: "";
+  position: absolute;
+  right: -5px;
+  top: 50%;
+  transform: translateY(-50%) scale(0);
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--color-gold);
+  border: 1px solid #fff;
+  transition: transform 0.15s ease;
+  pointer-events: none;
+}
+
+.interactive .bar:hover .fill::after,
+.dragging .fill::after {
+  transform: translateY(-50%) scale(1);
+}
+
+.dragging .fill {
+  transition: none !important;
 }
 
 .meta {

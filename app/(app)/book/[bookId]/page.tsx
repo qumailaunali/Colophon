@@ -17,6 +17,7 @@ import {
   chapterWordCount,
   computeProgressSummary,
   wordsIntoChapterAtSentence,
+  countWords,
 } from "@/lib/reading/progressMath";
 import { ReaderPane, type ReaderPaneHandle, type SelectionCommit } from "@/components/ReaderPane/ReaderPane";
 import { ControlBar } from "@/components/ControlBar/ControlBar";
@@ -63,6 +64,36 @@ export default function BookReaderPage() {
   const [pageInfo, setPageInfo] = useState({ page: 0, pageCount: 1 });
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [focusMode, setFocusMode] = useState(false);
+  const [isMusicPlaying, setIsMusicPlaying] = useState(false);
+  const ambientAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  const toggleMusic = () => {
+    if (typeof window === "undefined") return;
+
+    if (!ambientAudioRef.current) {
+      const audio = new Audio("/Music/Relaxing Music l Piano and Rain Sound 30 Minutes - 3D City Wiew.mp3");
+      audio.loop = true;
+      audio.volume = 0.45;
+      ambientAudioRef.current = audio;
+    }
+
+    if (isMusicPlaying) {
+      ambientAudioRef.current.pause();
+      setIsMusicPlaying(false);
+    } else {
+      ambientAudioRef.current.play()
+        .then(() => setIsMusicPlaying(true))
+        .catch((err) => console.error("Failed to play ambient music:", err));
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (ambientAudioRef.current) {
+        ambientAudioRef.current.pause();
+      }
+    };
+  }, []);
 
   const [activeTooltip, setActiveTooltip] = useState<string | null>(null);
   const tooltipTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -432,6 +463,62 @@ export default function BookReaderPage() {
     }
   }
 
+  function handleJumpToPercent(percent: number) {
+    if (!chapters.length) return;
+    const totalWords = Math.max(
+      chapterWordCounts.reduce((a, b) => a + b, 0),
+      1
+    );
+    const targetWordsRead = totalWords * (percent / 100);
+
+    let wordsAccumulator = 0;
+    let targetSpineIndex = 0;
+    let wordsIntoChapter = 0;
+
+    for (let i = 0; i < chapterWordCounts.length; i++) {
+      const count = chapterWordCounts[i];
+      if (wordsAccumulator + count >= targetWordsRead || i === chapterWordCounts.length - 1) {
+        targetSpineIndex = i;
+        wordsIntoChapter = Math.max(0, targetWordsRead - wordsAccumulator);
+        break;
+      }
+      wordsAccumulator += count;
+    }
+
+    const targetChapter = chapters[targetSpineIndex];
+    let targetSentenceIndex = 0;
+    let currentWords = 0;
+
+    for (const s of targetChapter.sentences) {
+      currentWords += countWords(s.text);
+      if (currentWords >= wordsIntoChapter) {
+        targetSentenceIndex = s.index;
+        break;
+      }
+    }
+
+    targetSentenceIndex = Math.max(
+      0,
+      Math.min(targetSentenceIndex, targetChapter.sentences.length - 1)
+    );
+
+    if (targetSpineIndex !== currentSpineIndex) {
+      ttsController.pause();
+      navigateToChapter(targetSpineIndex, targetSentenceIndex);
+    } else {
+      ttsController.pause();
+      setCurrentSentenceIndex(targetSentenceIndex);
+      readerPaneRef.current?.goToSentencePage(targetSentenceIndex);
+
+      const pageIndex = readerPaneRef.current?.getCurrentPage() ?? 0;
+      updateProgress({
+        spineIndex: currentSpineIndex,
+        sentenceIndex: targetSentenceIndex,
+        scrollOrPageOffset: pageIndex,
+      });
+    }
+  }
+
   useKeyboardShortcuts({
     onPrevPage: handlePrevPage,
     onNextPage: handleNextPage,
@@ -730,6 +817,7 @@ export default function BookReaderPage() {
               totalPages={summary.totalPagesEstimate}
               minutesRemaining={summary.minutesRemaining}
               onDark
+              onJumpToPercent={handleJumpToPercent}
             />
           </div>
         )}
@@ -761,6 +849,8 @@ export default function BookReaderPage() {
           onVolumeChange={(volume) => updateSettings({ speechVolume: volume })}
           sleepMinutesRemaining={sleepTimer.minutesRemaining}
           onSetSleepTimer={(minutes) => (minutes ? sleepTimer.start(minutes) : sleepTimer.cancel())}
+          isMusicPlaying={isMusicPlaying}
+          onToggleMusic={toggleMusic}
         />
       )}
 

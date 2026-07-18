@@ -141,16 +141,27 @@ export const ReaderPane = forwardRef<ReaderPaneHandle, ReaderPaneProps>(function
   const pageCountRef = useRef(pageCount);
   pageCountRef.current = pageCount;
 
-  // Clamp/reset the visible page whenever the chapter content or page width changes.
-  useEffect(() => {
+  const [disableTransition, setDisableTransition] = useState(false);
+  const [prevContentKey, setPrevContentKey] = useState(contentKey);
+
+  // Synchronously reset page and disable transition during render when chapter changes
+  if (contentKey !== prevContentKey) {
+    setPrevContentKey(contentKey);
+    setDisableTransition(true);
     const clamped = Math.min(initialPage ?? 0, Math.max(0, pageCount - 1));
     currentPageRef.current = clamped;
     setCurrentPageState(clamped);
-    // Intentionally re-runs only when the chapter/font-key changes, not on
-    // every pageCount recalculation from ResizeObserver — otherwise resizing
-    // the window would keep resetting the reader back to `initialPage`.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [contentKey]);
+  }
+
+  // Restore transition state in next tick
+  useEffect(() => {
+    if (disableTransition) {
+      const id = requestAnimationFrame(() => {
+        setDisableTransition(false);
+      });
+      return () => cancelAnimationFrame(id);
+    }
+  }, [disableTransition]);
 
   const setPage = useCallback(
     (page: number) => {
@@ -162,12 +173,14 @@ export const ReaderPane = forwardRef<ReaderPaneHandle, ReaderPaneProps>(function
   );
 
   const animateTurn = useCallback(
-    (direction: 1 | -1, nextPageIndex: number) => {
+    (direction: 1 | -1, nextPageIndex?: number) => {
       const columns = columnsRef.current;
       const host = overlayHostRef.current;
 
       if (!columns || !host || reducedMotion || pageWidth === 0) {
-        setPage(nextPageIndex);
+        if (nextPageIndex !== undefined) {
+          setPage(nextPageIndex);
+        }
         return;
       }
 
@@ -185,7 +198,9 @@ export const ReaderPane = forwardRef<ReaderPaneHandle, ReaderPaneProps>(function
       void wrapper.offsetWidth;
       wrapper.classList.add(direction === 1 ? styles.turningNext : styles.turningPrev);
 
-      setPage(nextPageIndex);
+      if (nextPageIndex !== undefined) {
+        setPage(nextPageIndex);
+      }
 
       const cleanup = () => {
         wrapper.removeEventListener("transitionend", cleanup);
@@ -202,13 +217,19 @@ export const ReaderPane = forwardRef<ReaderPaneHandle, ReaderPaneProps>(function
     () => ({
       nextPage: () => {
         const next = currentPageRef.current + 1;
-        if (next >= pageCountRef.current) return false;
+        if (next >= pageCountRef.current) {
+          animateTurn(1);
+          return false;
+        }
         animateTurn(1, next);
         return true;
       },
       prevPage: () => {
         const prev = currentPageRef.current - 1;
-        if (prev < 0) return false;
+        if (prev < 0) {
+          animateTurn(-1);
+          return false;
+        }
         animateTurn(-1, prev);
         return true;
       },
@@ -349,10 +370,12 @@ export const ReaderPane = forwardRef<ReaderPaneHandle, ReaderPaneProps>(function
         )}
         <div
           ref={columnsRef}
+          key={contentKey}
           className={styles.columns}
           style={{
             columnWidth: pageWidth > 0 ? FORCE_SINGLE_COLUMN_WIDTH : undefined,
             transform: `translateX(-${currentPage * pageWidth}px)`,
+            transition: disableTransition ? "none" : undefined,
             fontSize: `${fontSize}px`,
             lineHeight: lineSpacing,
             fontFamily: fontFamily || undefined,

@@ -23,6 +23,7 @@ interface PrefetchedAudio {
   blob: Blob | null;
   promise: Promise<void> | null;
   abortController: AbortController;
+  audio: HTMLAudioElement | null;
 }
 
 /**
@@ -67,6 +68,11 @@ export class AzureSpeechProvider implements TTSProvider {
     // Cancel any existing prefetch
     if (this.prefetched) {
       this.prefetched.abortController.abort();
+      if (this.prefetched.audio) {
+        this.prefetched.audio.pause();
+        this.prefetched.audio.onended = null;
+        this.prefetched.audio.onerror = null;
+      }
       if (this.prefetched.url) {
         URL.revokeObjectURL(this.prefetched.url);
       }
@@ -82,6 +88,7 @@ export class AzureSpeechProvider implements TTSProvider {
       blob: null,
       promise: null,
       abortController,
+      audio: null,
     };
 
     pref.promise = (async () => {
@@ -104,6 +111,12 @@ export class AzureSpeechProvider implements TTSProvider {
 
         pref.blob = blob;
         pref.url = URL.createObjectURL(blob);
+
+        // Pre-create and preload the audio element to avoid setup/buffering lag during play
+        const audio = new Audio(pref.url);
+        audio.preload = "auto";
+        audio.load();
+        pref.audio = audio;
       } catch (e) {
         // Ignore errors in prefetch, we will fall back to normal fetch in speak()
       }
@@ -150,6 +163,7 @@ export class AzureSpeechProvider implements TTSProvider {
     try {
       let url: string;
       let blob: Blob;
+      let existingAudio: HTMLAudioElement | undefined;
 
       // Check if we have a matching prefetched item
       if (
@@ -163,6 +177,7 @@ export class AzureSpeechProvider implements TTSProvider {
         if (this.prefetched.url && this.prefetched.blob) {
           url = this.prefetched.url;
           blob = this.prefetched.blob;
+          existingAudio = this.prefetched.audio || undefined;
           // Clear this.prefetched container without revoking the URL, as we are now playing it.
           this.prefetched = null;
         } else {
@@ -177,6 +192,11 @@ export class AzureSpeechProvider implements TTSProvider {
         // No match, or no prefetch. Clean up any existing prefetch.
         if (this.prefetched) {
           this.prefetched.abortController.abort();
+          if (this.prefetched.audio) {
+            this.prefetched.audio.pause();
+            this.prefetched.audio.onended = null;
+            this.prefetched.audio.onerror = null;
+          }
           if (this.prefetched.url) {
             URL.revokeObjectURL(this.prefetched.url);
           }
@@ -185,7 +205,7 @@ export class AzureSpeechProvider implements TTSProvider {
         return this.doNormalSpeakFetch(text, options, callbacks, controller, retriesLeft);
       }
 
-      await this.playAudioUrl(url, options);
+      await this.playAudioUrl(url, options, existingAudio);
     } catch (error) {
       if (this.objectUrl) {
         URL.revokeObjectURL(this.objectUrl);
@@ -234,9 +254,9 @@ export class AzureSpeechProvider implements TTSProvider {
     await this.playAudioUrl(url, options);
   }
 
-  private async playAudioUrl(url: string, options: TTSUtteranceOptions): Promise<void> {
+  private async playAudioUrl(url: string, options: TTSUtteranceOptions, existingAudio?: HTMLAudioElement): Promise<void> {
     await new Promise<void>((resolve, reject) => {
-      const audio = new Audio(url);
+      const audio = existingAudio || new Audio(url);
       audio.playbackRate = options.rate;
       audio.volume = Math.min(1, Math.max(0, options.volume));
       this.audio = audio;
@@ -265,6 +285,11 @@ export class AzureSpeechProvider implements TTSProvider {
     }
     if (this.prefetched) {
       this.prefetched.abortController.abort();
+      if (this.prefetched.audio) {
+        this.prefetched.audio.pause();
+        this.prefetched.audio.onended = null;
+        this.prefetched.audio.onerror = null;
+      }
       if (this.prefetched.url) {
         URL.revokeObjectURL(this.prefetched.url);
       }

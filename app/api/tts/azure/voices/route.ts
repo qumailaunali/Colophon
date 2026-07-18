@@ -54,6 +54,7 @@ export async function GET() {
 
   const entries: AzureVoiceEntry[] = await azureRes.json();
   const voices = entries
+    .filter((v) => v.Locale.toLowerCase() === "en-us")
     .map((v) => ({ name: v.ShortName, lang: v.Locale }))
     .sort((a, b) => a.lang.localeCompare(b.lang) || a.name.localeCompare(b.name));
 

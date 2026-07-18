@@ -556,3 +556,42 @@
   }
 }
 
+.importBookButton {
+  background: var(--color-gold);
+  color: var(--color-ink);
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 10px 18px;
+  font-family: var(--font-ui);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.importBookButton:hover {
+  background: #b6911f;
+}
+
+.wantMoreButton {
+  background: rgba(201, 162, 39, 0.15);
+  color: var(--color-gold);
+  border: 1px solid rgba(201, 162, 39, 0.3);
+  border-radius: var(--radius-sm);
+  padding: 10px 18px;
+  font-family: var(--font-ui);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.wantMoreButton:hover {
+  background: rgba(201, 162, 39, 0.25);
+  border-color: var(--color-gold);
+}
+

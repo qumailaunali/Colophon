@@ -1,0 +1,213 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(12, 22, 38, 0.45);
+  backdrop-filter: blur(12px) saturate(180%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 105;
+  padding: 20px;
+}
+
+.modal {
+  background: rgba(21, 37, 64, 0.95);
+  backdrop-filter: blur(25px) saturate(180%);
+  border: 1px solid rgba(243, 238, 224, 0.18);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  color: var(--color-paper);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  width: 95%;
+  max-width: 740px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  font-family: var(--font-ui);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(243, 238, 224, 0.1);
+  padding-bottom: 12px;
+}
+
+.header h2 {
+  font-size: 1.15rem;
+  margin: 0;
+  font-family: var(--font-display);
+  color: var(--color-gold);
+}
+
+.closeButton {
+  background: none;
+  border: none;
+  color: var(--color-paper);
+  font-size: 1.2rem;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
+.closeButton:hover {
+  opacity: 1;
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.instructions {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(243, 238, 224, 0.06);
+  border-radius: var(--radius-sm);
+  padding: 12px 16px;
+}
+
+.instructions h3 {
+  margin-top: 0;
+  margin-bottom: 6px;
+  font-size: 0.82rem;
+  color: var(--color-gold);
+}
+
+.instructions ol {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.74rem;
+  line-height: 1.4;
+  color: rgba(243, 238, 224, 0.85);
+}
+
+.contentGrid {
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 20px;
+}
+
+@media (max-width: 660px) {
+  .contentGrid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.column h3 {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--color-gold);
+  border-bottom: 1px solid rgba(243, 238, 224, 0.1);
+  padding-bottom: 6px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.libraryList, .legalList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sourceCard {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(243, 238, 224, 0.06);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sourceInfo h4 {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--color-paper);
+}
+
+.sourceInfo p {
+  margin: 2px 0 0 0;
+  font-size: 0.7rem;
+  line-height: 1.35;
+  color: rgba(243, 238, 224, 0.5);
+}
+
+.mirrorGroup {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.mirrorLink {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(243, 238, 224, 0.1);
+  color: var(--color-paper);
+  border-radius: 12px;
+  padding: 3px 9px;
+  font-size: 0.65rem;
+  text-decoration: none;
+  font-weight: 500;
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
+}
+
+.mirrorLink:hover {
+  background: rgba(201, 162, 39, 0.15);
+  border-color: var(--color-gold);
+  color: var(--color-gold);
+}
+
+.legalLink {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(243, 238, 224, 0.06);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  text-decoration: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.legalLink:hover {
+  background: rgba(201, 162, 39, 0.08);
+  border-color: rgba(201, 162, 39, 0.3);
+}
+
+.legalInfo h4 {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--color-paper);
+}
+
+.legalLink:hover .legalInfo h4 {
+  color: var(--color-gold);
+}
+
+.legalInfo p {
+  margin: 2px 0 0 0;
+  font-size: 0.68rem;
+  color: rgba(243, 238, 224, 0.5);
+}
+
+.arrowIcon {
+  color: rgba(243, 238, 224, 0.4);
+  font-size: 0.85rem;
+  transition: transform 0.2s, color 0.2s;
+}
+
+.legalLink:hover .arrowIcon {
+  transform: translate(1px, -1px);
+  color: var(--color-gold);
+}
