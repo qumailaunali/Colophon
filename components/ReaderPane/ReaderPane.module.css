@@ -8,6 +8,7 @@
   border-radius: var(--radius-lg);
   background: var(--reader-bg);
   box-shadow: var(--shadow-card);
+  touch-action: pan-y;
 }
 
 @media (max-width: 640px) {

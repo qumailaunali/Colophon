@@ -331,6 +331,11 @@ export const ReaderPane = forwardRef<ReaderPaneHandle, ReaderPaneProps>(function
       touchStartPosRef.current = null;
     }
   }
+  function handleTouchCancel() {
+    cancelLongPressTimer();
+    touchStartPosRef.current = null;
+    touchStartX.current = null;
+  }
   function handleTouchEnd(e: React.TouchEvent) {
     cancelLongPressTimer();
     touchStartPosRef.current = null;
@@ -357,7 +362,15 @@ export const ReaderPane = forwardRef<ReaderPaneHandle, ReaderPaneProps>(function
   }
 
   return (
-    <div ref={viewportRef} className={styles.viewport} data-reader-theme={theme}>
+    <div
+      ref={viewportRef}
+      className={styles.viewport}
+      data-reader-theme={theme}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      onTouchCancel={handleTouchCancel}
+    >
       <div className={styles.clipContainer}>
         {/* Highlighting the actively-spoken sentence via a scoped stylesheet
             (rather than imperatively mutating the dangerouslySetInnerHTML
@@ -384,9 +397,6 @@ export const ReaderPane = forwardRef<ReaderPaneHandle, ReaderPaneProps>(function
           onMouseUp={handleMouseUp}
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
           dangerouslySetInnerHTML={{ __html: html }}
         />
         <div ref={overlayHostRef} className={styles.overlayHost} />
