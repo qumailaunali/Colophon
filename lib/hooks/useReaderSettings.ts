@@ -22,11 +22,11 @@ export const DEFAULT_READER_SETTINGS: ReaderSettingsState = {
   fontSize: 18,
   lineSpacing: 1.6,
   theme: "paper",
-  voiceName: "Microsoft Emma Online (Natural) - English (United States)",
+  voiceName: "en-US-AvaNeural",
   speechRate: 1.0,
   speechPitch: 1.0,
   speechVolume: 1.0,
-  ttsProvider: "webspeech",
+  ttsProvider: "edge",
 };
 
 export function useReaderSettings() {

@@ -27,13 +27,11 @@ interface PrefetchedAudio {
 }
 
 /**
- * Premium provider backed by Azure Cognitive Services Speech, calling our
- * own /api/tts/azure routes (never the Azure key) so the subscription key
- * stays server-only. Speed/volume are applied via the <audio> element
- * itself rather than SSML, since many neural voices only partly support
- * SSML <prosody> rate/volume — see lib/tts/azureSsml.ts.
+ * Free neural provider backed by Microsoft Edge TTS, calling our
+ * own /api/tts/edge routes so no API key is required. Speed/volume are
+ * applied via the <audio> element itself.
  */
-export class AzureSpeechProvider implements TTSProvider {
+export class EdgeSpeechProvider implements TTSProvider {
   private audio: HTMLAudioElement | null = null;
   private objectUrl: string | null = null;
   private abortController: AbortController | null = null;
@@ -44,7 +42,7 @@ export class AzureSpeechProvider implements TTSProvider {
   async listVoices(): Promise<TTSVoice[]> {
     if (this.voicesCache) return this.voicesCache;
     try {
-      const res = await fetch("/api/tts/azure/voices");
+      const res = await fetch("/api/tts/edge/voices");
       if (!res.ok) return [];
       const voices: TTSVoice[] = await res.json();
       this.voicesCache = voices;
@@ -69,9 +67,9 @@ export class AzureSpeechProvider implements TTSProvider {
     if (this.prefetched) {
       this.prefetched.abortController.abort();
       if (this.prefetched.audio) {
-        this.prefetched.audio.pause();
         this.prefetched.audio.onended = null;
         this.prefetched.audio.onerror = null;
+        this.prefetched.audio.pause();
       }
       if (this.prefetched.url) {
         URL.revokeObjectURL(this.prefetched.url);
@@ -93,7 +91,7 @@ export class AzureSpeechProvider implements TTSProvider {
 
     pref.promise = (async () => {
       try {
-        const res = await fetch("/api/tts/azure", {
+        const res = await fetch("/api/tts/edge", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -128,9 +126,9 @@ export class AzureSpeechProvider implements TTSProvider {
   speak(text: string, options: TTSUtteranceOptions, callbacks: TTSSpeakCallbacks): void {
     // Stop and clean up any ongoing audio playback.
     if (this.audio) {
-      this.audio.pause();
       this.audio.onended = null;
       this.audio.onerror = null;
+      this.audio.pause();
       this.audio = null;
     }
     if (this.objectUrl) {
@@ -151,8 +149,7 @@ export class AzureSpeechProvider implements TTSProvider {
 
   /** Fetches + plays once; on any failure (bad response, empty/corrupt
    * audio, decode error) retries the whole round-trip `retriesLeft` more
-   * times before giving up, to smooth over transient network hiccups
-   * between this server and Azure. */
+   * times before giving up, to smooth over transient network hiccups. */
   private async attemptSpeak(
     text: string,
     options: TTSUtteranceOptions,
@@ -172,8 +169,12 @@ export class AzureSpeechProvider implements TTSProvider {
         this.prefetched.voiceName === options.voiceName &&
         this.prefetched.pitch === options.pitch
       ) {
+        console.log(`[Edge TTS] Prefetch HIT for: "${text.substring(0, 30)}..."`);
+        const startTime = Date.now();
         // Wait for prefetch promise to resolve
         await this.prefetched.promise;
+        console.log(`[Edge TTS] Prefetch promise resolved in ${Date.now() - startTime}ms`);
+        
         if (this.prefetched.url && this.prefetched.blob) {
           url = this.prefetched.url;
           blob = this.prefetched.blob;
@@ -181,6 +182,7 @@ export class AzureSpeechProvider implements TTSProvider {
           // Clear this.prefetched container without revoking the URL, as we are now playing it.
           this.prefetched = null;
         } else {
+          console.warn("[Edge TTS] Prefetch resolved but had no URL/Blob. Falling back to normal fetch.");
           // Prefetch failed, clean up and do a normal fetch
           if (this.prefetched.url) {
             URL.revokeObjectURL(this.prefetched.url);
@@ -191,16 +193,22 @@ export class AzureSpeechProvider implements TTSProvider {
       } else {
         // No match, or no prefetch. Clean up any existing prefetch.
         if (this.prefetched) {
+          console.warn(
+            `[Edge TTS] Prefetch MISMATCH/BYPASS.\nExpected: "${this.prefetched.text.substring(0, 30)}..."\nRequested: "${text.substring(0, 30)}..."`
+          );
           this.prefetched.abortController.abort();
           if (this.prefetched.audio) {
-            this.prefetched.audio.pause();
             this.prefetched.audio.onended = null;
             this.prefetched.audio.onerror = null;
+            this.prefetched.audio.ontimeupdate = null;
+            this.prefetched.audio.pause();
           }
           if (this.prefetched.url) {
             URL.revokeObjectURL(this.prefetched.url);
           }
           this.prefetched = null;
+        } else {
+          console.log(`[Edge TTS] No prefetch exists for: "${text.substring(0, 30)}..."`);
         }
         return this.doNormalSpeakFetch(text, options, callbacks, controller, retriesLeft);
       }
@@ -215,7 +223,7 @@ export class AzureSpeechProvider implements TTSProvider {
 
       if (controller.signal.aborted) throw error;
       if (retriesLeft > 0) {
-        console.warn("[Azure TTS] retrying after error:", error);
+        console.warn("[Edge TTS] retrying after error:", error);
         return this.attemptSpeak(text, options, callbacks, controller, retriesLeft - 1);
       }
       throw error;
@@ -229,7 +237,7 @@ export class AzureSpeechProvider implements TTSProvider {
     controller: AbortController,
     retriesLeft: number
   ): Promise<void> {
-    const res = await fetch("/api/tts/azure", {
+    const res = await fetch("/api/tts/edge", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -242,12 +250,12 @@ export class AzureSpeechProvider implements TTSProvider {
 
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));
-      throw new Error(body.error || `Azure Speech request failed (${res.status})`);
+      throw new Error(body.error || `Edge Speech request failed (${res.status})`);
     }
 
     const blob = await res.blob();
     if (blob.size === 0) {
-      throw new Error("Azure returned an empty audio response");
+      throw new Error("Edge returned an empty audio response");
     }
 
     const url = URL.createObjectURL(blob);
@@ -311,7 +319,7 @@ export class AzureSpeechProvider implements TTSProvider {
         audio.onended = null;
         audio.ontimeupdate = null;
         audio.onerror = null;
-        reject(new Error(`Azure audio playback failed (${mediaErrorName(audio.error?.code)})`));
+        reject(new Error(`Edge audio playback failed (${mediaErrorName(audio.error?.code)})`));
       };
       audio.play().catch(reject);
     });

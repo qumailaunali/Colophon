@@ -1,5 +1,5 @@
 export type ReaderTheme = "paper" | "sepia" | "dark";
-export type TtsProviderKind = "webspeech" | "azure";
+export type TtsProviderKind = "webspeech" | "azure" | "edge";
 
 export type TocEntry = {
   label: string;
