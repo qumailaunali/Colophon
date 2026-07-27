@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
   try {
-    const { action, text, messages } = await req.json();
+    const { action, text, pageContext, messages } = await req.json();
 
     if (!text || typeof text !== "string") {
       return NextResponse.json({ error: "Missing or invalid page text." }, { status: 400 });
@@ -17,19 +17,36 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "OpenRouter API key is not configured on the server." }, { status: 500 });
     }
 
+    // Determine contextText using pageContext if available, otherwise fallback to text
+    let contextText = "";
+    if (pageContext) {
+      const prevText = (pageContext.previous || []).filter(Boolean).join("\n\n");
+      const nextText = (pageContext.next || []).filter(Boolean).join("\n\n");
+      const curNum = pageContext.currentPageNumber || 1;
+      
+      const prevSection = prevText ? `[Previous Pages Context]\n${prevText}\n\n` : "";
+      const currentSection = `[Current Page Text (Page ${curNum})]\n${pageContext.current || text}`;
+      const nextSection = nextText ? `\n\n[Next Pages Context]\n${nextText}` : "";
+      
+      contextText = `${prevSection}${currentSection}${nextSection}`;
+    } else {
+      contextText = text;
+    }
+
     // Set up chat payload messages
     let apiMessages: any[] = [];
     if (action === "ask_book") {
       if (!Array.isArray(messages)) {
         return NextResponse.json({ error: "Missing or invalid messages history array." }, { status: 400 });
       }
-      const systemPrompt = `You are a helpful reading assistant. You are answering questions about the text of the book page displayed below.
+      const systemPrompt = `You are a helpful reading assistant. You are answering questions about the text of the book.
+You will be provided the text of the Current Page the user is viewing, along with the text of up to 2 previous pages and 2 next pages for context.
 
-Page Text:
-${text}
+Page Context:
+${contextText}
 
 Instructions:
-1. Rely ONLY on the provided Page Text to answer the question. If the answer cannot be found in the text, explain that it is not mentioned on this page.
+1. Answer the user's question using the provided context (Current Page, and the surrounding Previous/Next pages). Prioritize the Current Page, but use the surrounding context to answer questions that span pages or refer to nearby context. If the answer cannot be found in any of the provided pages, explain that it is not mentioned in this section.
 2. Be concise, clear, and direct.
 3. Keep the tone helpful and friendly.`;
 
@@ -41,9 +58,9 @@ Instructions:
         }))
       ];
     } else {
-      const systemPrompt = `You are an expert reading assistant. You will be given the text of a single page of a book. Your task is to output a clean JSON object based on the user's requested action ('summarize' or 'flashcards').
+      const systemPrompt = `You are an expert reading assistant. You will be given the text of a book page (Current Page) along with the text of the surrounding pages for broader context. Your task is to output a clean JSON object based on the user's requested action ('summarize' or 'flashcards').
             
-If action is 'summarize', output EXACTLY a JSON object with a 'summary' key mapping to an array of 2-3 concise summary sentences/points:
+If action is 'summarize', output EXACTLY a JSON object with a 'summary' key mapping to an array of 2-3 concise summary sentences/points for the Current Page (incorporating any relevant details from the surrounding pages to make the summary coherent and contextual):
 {
   "summary": [
     "Concise summary point 1.",
@@ -52,7 +69,7 @@ If action is 'summarize', output EXACTLY a JSON object with a 'summary' key mapp
   ]
 }
 
-If action is 'flashcards', output EXACTLY a JSON object with a 'flashcards' key mapping to an array of 3 useful study questions and answers:
+If action is 'flashcards', output EXACTLY a JSON object with a 'flashcards' key mapping to an array of 3 useful study questions and answers based on the Current Page (using surrounding pages context if necessary):
 {
   "flashcards": [
     { "question": "What is ...?", "answer": "..." },
@@ -65,7 +82,7 @@ Do not wrap the JSON output in markdown code blocks. Return ONLY the raw JSON st
 
       apiMessages = [
         { role: "system", content: systemPrompt },
-        { role: "user", content: `Action: ${action}\n\nPage Text:\n${text}` }
+        { role: "user", content: `Action: ${action}\n\nPage Context:\n${contextText}` }
       ];
     }
 

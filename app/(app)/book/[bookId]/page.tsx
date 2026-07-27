@@ -164,18 +164,49 @@ export default function BookReaderPage() {
     setAiFlashcards(null);
     setAiError(null);
 
-    const text = readerPaneRef.current?.getActivePageText();
-    if (!text || text.trim().length < 10) {
+    const pane = readerPaneRef.current;
+    const currentText = pane?.getActivePageText() || "";
+    if (!currentText || currentText.trim().length < 10) {
       setAiError("This page does not contain enough readable text to summarize.");
       setAiAction("idle");
       return;
     }
 
+    const currentPage = pane?.getCurrentPage() ?? 0;
+    const pageCount = pane?.getPageCount() ?? 1;
+
+    const previousPages: string[] = [];
+    if (currentPage >= 2) {
+      const p2 = pane?.getPageText(currentPage - 2) || "";
+      if (p2.trim()) previousPages.push(p2);
+    }
+    if (currentPage >= 1) {
+      const p1 = pane?.getPageText(currentPage - 1) || "";
+      if (p1.trim()) previousPages.push(p1);
+    }
+
+    const nextPages: string[] = [];
+    if (currentPage + 1 < pageCount) {
+      const n1 = pane?.getPageText(currentPage + 1) || "";
+      if (n1.trim()) nextPages.push(n1);
+    }
+    if (currentPage + 2 < pageCount) {
+      const n2 = pane?.getPageText(currentPage + 2) || "";
+      if (n2.trim()) nextPages.push(n2);
+    }
+
+    const pageContext = {
+      current: currentText,
+      previous: previousPages,
+      next: nextPages,
+      currentPageNumber: currentPage + 1,
+    };
+
     try {
       const res = await fetch("/api/ai/page-helper", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "summarize", text }),
+        body: JSON.stringify({ action: "summarize", text: currentText, pageContext }),
       });
       const data = await res.json();
       if (!res.ok || data.error) {
@@ -198,18 +229,49 @@ export default function BookReaderPage() {
     setCurrentCardIndex(0);
     setCardFlipped(false);
 
-    const text = readerPaneRef.current?.getActivePageText();
-    if (!text || text.trim().length < 10) {
+    const pane = readerPaneRef.current;
+    const currentText = pane?.getActivePageText() || "";
+    if (!currentText || currentText.trim().length < 10) {
       setAiError("This page does not contain enough readable text to generate flashcards.");
       setAiAction("idle");
       return;
     }
 
+    const currentPage = pane?.getCurrentPage() ?? 0;
+    const pageCount = pane?.getPageCount() ?? 1;
+
+    const previousPages: string[] = [];
+    if (currentPage >= 2) {
+      const p2 = pane?.getPageText(currentPage - 2) || "";
+      if (p2.trim()) previousPages.push(p2);
+    }
+    if (currentPage >= 1) {
+      const p1 = pane?.getPageText(currentPage - 1) || "";
+      if (p1.trim()) previousPages.push(p1);
+    }
+
+    const nextPages: string[] = [];
+    if (currentPage + 1 < pageCount) {
+      const n1 = pane?.getPageText(currentPage + 1) || "";
+      if (n1.trim()) nextPages.push(n1);
+    }
+    if (currentPage + 2 < pageCount) {
+      const n2 = pane?.getPageText(currentPage + 2) || "";
+      if (n2.trim()) nextPages.push(n2);
+    }
+
+    const pageContext = {
+      current: currentText,
+      previous: previousPages,
+      next: nextPages,
+      currentPageNumber: currentPage + 1,
+    };
+
     try {
       const res = await fetch("/api/ai/page-helper", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "flashcards", text }),
+        body: JSON.stringify({ action: "flashcards", text: currentText, pageContext }),
       });
       const data = await res.json();
       if (!res.ok || data.error) {
@@ -239,12 +301,43 @@ export default function BookReaderPage() {
     setChatMessages(updatedMessages);
     setAiAction("chat_answering");
 
-    const text = readerPaneRef.current?.getActivePageText();
-    if (!text || text.trim().length < 10) {
+    const pane = readerPaneRef.current;
+    const currentText = pane?.getActivePageText() || "";
+    if (!currentText || currentText.trim().length < 10) {
       setAiError("This page does not contain enough readable text to ask questions.");
       setAiAction("idle");
       return;
     }
+
+    const currentPage = pane?.getCurrentPage() ?? 0;
+    const pageCount = pane?.getPageCount() ?? 1;
+
+    const previousPages: string[] = [];
+    if (currentPage >= 2) {
+      const p2 = pane?.getPageText(currentPage - 2) || "";
+      if (p2.trim()) previousPages.push(p2);
+    }
+    if (currentPage >= 1) {
+      const p1 = pane?.getPageText(currentPage - 1) || "";
+      if (p1.trim()) previousPages.push(p1);
+    }
+
+    const nextPages: string[] = [];
+    if (currentPage + 1 < pageCount) {
+      const n1 = pane?.getPageText(currentPage + 1) || "";
+      if (n1.trim()) nextPages.push(n1);
+    }
+    if (currentPage + 2 < pageCount) {
+      const n2 = pane?.getPageText(currentPage + 2) || "";
+      if (n2.trim()) nextPages.push(n2);
+    }
+
+    const pageContext = {
+      current: currentText,
+      previous: previousPages,
+      next: nextPages,
+      currentPageNumber: currentPage + 1,
+    };
 
     try {
       const res = await fetch("/api/ai/page-helper", {
@@ -252,7 +345,8 @@ export default function BookReaderPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           action: "ask_book",
-          text,
+          text: currentText,
+          pageContext,
           messages: updatedMessages.slice(1),
         }),
       });
