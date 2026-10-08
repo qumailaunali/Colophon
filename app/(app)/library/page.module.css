@@ -23,8 +23,13 @@
   .page {
     padding: 14px 20px 60px;
   }
+  /* Same height and top as the fixed 38px hamburger so they line up. */
   .header h1 {
-    margin-left: 60px;
+    margin-left: 56px;
+    min-height: 38px;
+    display: flex;
+    align-items: center;
+    line-height: 1.1;
   }
 }
 
@@ -74,6 +79,8 @@
   font-weight: 600;
   cursor: pointer;
   transition: background 0.2s;
+  text-decoration: none;
+  display: inline-block;
 }
 
 .addButton:hover {
@@ -371,11 +378,109 @@
   border-color: var(--color-gold);
 }
 
+.infoLabel {
+  margin-left: 6px;
+}
+
+.labelShort {
+  display: none;
+}
+
+/* Phones: title, tabs and actions each get their own full-width row.
+ * Features collapses to an icon; the other actions share the row equally
+ * with touch-sized heights. */
+@media (max-width: 640px) {
+  .header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  /* Stay within the viewport; with the extra admin tab the row can be wider
+   * than a phone, so it scrolls sideways inside the pill instead of pushing
+   * the whole page off-screen. */
+  .tabContainer {
+    width: 100%;
+    min-width: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .tabContainer::-webkit-scrollbar {
+    display: none;
+  }
+
+  .tabButton {
+    flex: 1 0 auto;
+    padding: 9px 12px;
+    font-size: 0.78rem;
+    white-space: nowrap;
+  }
+
+  .headerActions {
+    width: 100%;
+    gap: 8px;
+  }
+
+  .headerActions .infoButton,
+  .headerActions .importBookButton,
+  .headerActions .wantMoreButton,
+  .headerActions .addButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 10px 12px;
+    font-size: 0.74rem;
+    letter-spacing: 0.03em;
+    line-height: 1.2;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    text-align: center;
+  }
+
+  .labelLong {
+    display: none;
+  }
+
+  .labelShort {
+    display: inline;
+  }
+
+  .headerActions .importBookButton,
+  .headerActions .wantMoreButton,
+  .headerActions .addButton {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .headerActions .infoButton {
+    flex: none;
+    width: 44px;
+    padding: 0;
+    font-size: 1.05rem;
+  }
+
+  .infoLabel {
+    display: none;
+  }
+
+  /* Two gold buttons side by side read as one; make Import secondary. */
+  .headerActions .importBookButton {
+    background: rgba(201, 162, 39, 0.15);
+    color: var(--color-gold);
+    border: 1px solid rgba(201, 162, 39, 0.3);
+  }
+}
+
 /* Information Overlay Modal */
 .infoOverlay {
   position: fixed;
   inset: 0;
   background: rgba(12, 22, 38, 0.45);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
   backdrop-filter: blur(12px) saturate(180%);
   display: flex;
   align-items: center;
@@ -387,6 +492,7 @@
 
 .infoCard {
   background: rgba(21, 37, 64, 0.95);
+  -webkit-backdrop-filter: blur(25px) saturate(180%);
   backdrop-filter: blur(25px) saturate(180%);
   border: 1px solid rgba(243, 238, 224, 0.18);
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.15);
@@ -596,3 +702,14 @@
   border-color: var(--color-gold);
 }
 
+@media (max-width: 640px) {
+  .infoOverlay {
+    padding: 12px;
+  }
+  .infoCard {
+    width: 100%;
+    height: 88dvh;
+    padding: 20px 16px;
+    gap: 12px;
+  }
+}

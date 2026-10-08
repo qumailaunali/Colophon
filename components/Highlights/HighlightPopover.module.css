@@ -89,3 +89,19 @@
 .save:hover {
   background: #b6911f;
 }
+
+/* Never taller than the screen (e.g. landscape phones, keyboard open). */
+.popover {
+  max-height: calc(100dvh - 40px);
+  overflow-y: auto;
+}
+
+@media (max-width: 640px) {
+  .overlay {
+    padding: 12px;
+  }
+  .popover {
+    padding: 20px 16px;
+    max-height: calc(100dvh - 24px);
+  }
+}

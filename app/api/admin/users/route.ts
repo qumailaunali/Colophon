@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { createClient as createServerClient } from "@/lib/supabase/server";
-import { createAdminClient, deleteUserAndFiles } from "@/lib/supabase/admin";
+import { ADMIN_EMAIL, createAdminClient, listUsersWithBookCounts } from "@/lib/supabase/admin";
 
-export async function POST() {
+export async function GET() {
   const supabase = await createServerClient();
   const {
     data: { user },
@@ -10,6 +10,9 @@ export async function POST() {
 
   if (!user) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  }
+  if (user.email !== ADMIN_EMAIL) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   const admin = createAdminClient();
@@ -20,12 +23,12 @@ export async function POST() {
     );
   }
 
-  // Deleting the auth user cascades books/highlights/reading_progress/reader_settings
-  // via their ON DELETE CASCADE foreign keys to auth.users.
-  const { error } = await deleteUserAndFiles(admin, user.id);
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  try {
+    return NextResponse.json({ users: await listUsersWithBookCounts(admin) });
+  } catch (err) {
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : "Failed to list users" },
+      { status: 500 }
+    );
   }
-
-  return NextResponse.json({ success: true });
 }

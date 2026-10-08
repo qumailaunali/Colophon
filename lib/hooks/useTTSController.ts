@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getTTSProvider } from "@/lib/tts/getTTSProvider";
+import { unlockSharedAudioElement } from "@/lib/tts/iosAudio";
 import type { TTSProvider, TTSVoice } from "@/lib/tts/TTSProvider";
 import type { EpubChapter } from "@/lib/epub/types";
 import type { ReaderSettingsState } from "./useReaderSettings";
@@ -136,6 +137,8 @@ export function useTTSController({ settings, onSentenceChange, onChapterEnd }: U
       if (chapter) chapterRef.current = chapter;
       if (sentenceIndex != null) sentenceIndexRef.current = sentenceIndex;
       if (!chapterRef.current) return;
+      // Must run synchronously inside the tap for iOS to allow audio.
+      unlockSharedAudioElement();
       setLastError(null);
       setPlaying(true);
       speakCurrent();

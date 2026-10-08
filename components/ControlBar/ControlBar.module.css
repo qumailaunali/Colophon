@@ -239,3 +239,19 @@
 .popupClose:hover {
   background: #b6911f;
 }
+
+/* Never taller than the screen (e.g. landscape phones, keyboard open). */
+.popup {
+  max-height: calc(100dvh - 40px);
+  overflow-y: auto;
+}
+
+@media (max-width: 640px) {
+  .overlay {
+    padding: 12px;
+  }
+  .popup {
+    padding: 20px 16px;
+    max-height: calc(100dvh - 24px);
+  }
+}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { LibraryGrid } from "@/components/Library/LibraryGrid";
 import { BookUploadModal } from "@/components/Library/BookUploadModal";
@@ -318,8 +319,10 @@ export default function LibraryPage() {
             className={styles.infoButton}
             onClick={() => setShowInfoModal(true)}
             title="App Features Guide"
+            aria-label="App features guide"
           >
-            ℹ️ Features
+            <span aria-hidden>ℹ️</span>
+            <span className={styles.infoLabel}>Features</span>
           </button>
           {activeTab === "mine" && (
             <>
@@ -340,14 +343,21 @@ export default function LibraryPage() {
                 className={styles.wantMoreButton}
                 onClick={() => setShowImportSources(true)}
               >
-                Want more books?
+                <span className={styles.labelLong}>Want more books?</span>
+                <span className={styles.labelShort}>Find books</span>
               </button>
               {user?.email === "qumailaunali@gmail.com" && (
                 <button className={styles.addButton} onClick={() => setShowUpload(true)}>
-                  + Add to Open Library
+                  <span className={styles.labelLong}>+ Add to Open Library</span>
+                  <span className={styles.labelShort}>+ Add book</span>
                 </button>
               )}
             </>
+          )}
+          {activeTab === "admin" && (
+            <Link href="/admin/users" className={styles.addButton}>
+              View Users
+            </Link>
           )}</div>
       </div>
 

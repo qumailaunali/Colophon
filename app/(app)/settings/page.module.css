@@ -9,7 +9,29 @@
     padding: 14px 20px 60px;
   }
   .page h1 {
-    margin-left: 60px;
+    margin-left: 56px;
+    margin-top: 0;
+    min-height: 38px;
+    display: flex;
+    align-items: center;
+    line-height: 1.1;
+  }
+}
+
+@media (max-width: 640px) {
+  .page {
+    padding: 14px 16px 40px;
+  }
+  .page h1 {
+    margin-bottom: 18px;
+  }
+  .section {
+    padding: 20px 16px;
+    margin-bottom: 16px;
+  }
+  .deleteButton {
+    width: 100%;
+    min-height: 44px;
   }
 }
 

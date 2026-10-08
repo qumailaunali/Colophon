@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
@@ -28,6 +28,16 @@ import { HighlightPopover } from "@/components/Highlights/HighlightPopover";
 import { DictionaryPopover } from "@/components/Dictionary/DictionaryPopover";
 import styles from "./page.module.css";
 import { HighlightIcon } from "@/components/Icons/HighlightIcon";
+import { FocusIcon } from "@/components/Icons/FocusIcon";
+import {
+  getFullscreenElement,
+  isFullscreenSupported,
+  isStandaloneApp,
+  requestInstallHelp,
+  toggleDocumentFullscreen,
+} from "@/lib/pwa";
+
+const subscribeNoop = () => () => {};
 
 export default function BookReaderPage() {
   const params = useParams<{ bookId: string }>();
@@ -49,6 +59,7 @@ export default function BookReaderPage() {
   const [showSettings, setShowSettings] = useState(false);
   const [showAiModal, setShowAiModal] = useState(false);
   const [showInfoModal, setShowInfoModal] = useState(false);
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [aiAction, setAiAction] = useState<"idle" | "summarizing" | "generating_flashcards" | "chat_answering">("idle");
   const [aiSummary, setAiSummary] = useState<string[] | null>(null);
   const [aiFlashcards, setAiFlashcards] = useState<{ question: string; answer: string }[] | null>(null);
@@ -391,18 +402,40 @@ export default function BookReaderPage() {
 
   useEffect(() => {
     function handleFullscreenChange() {
-      setIsFullscreen(!!document.fullscreenElement);
+      setIsFullscreen(!!getFullscreenElement());
     }
     document.addEventListener("fullscreenchange", handleFullscreenChange);
-    return () => document.removeEventListener("fullscreenchange", handleFullscreenChange);
+    document.addEventListener("webkitfullscreenchange", handleFullscreenChange);
+    return () => {
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+      document.removeEventListener("webkitfullscreenchange", handleFullscreenChange);
+    };
   }, []);
 
-  async function toggleFullscreen() {
-    if (document.fullscreenElement) {
-      await document.exitFullscreen().catch(() => {});
-    } else if (document.documentElement.requestFullscreen) {
-      await document.documentElement.requestFullscreen().catch(() => {});
+  useEffect(() => {
+    if (!showMoreMenu) return;
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") setShowMoreMenu(false);
     }
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [showMoreMenu]);
+
+  // iPhone Safari has no Fullscreen API: there the button explains how to
+  // install the app (which runs full screen), and inside the installed app
+  // the button is hidden.
+  const fullscreenMode = useSyncExternalStore(
+    subscribeNoop,
+    () => (isFullscreenSupported() ? "native" : isStandaloneApp() ? "hidden" : "install"),
+    () => "native"
+  );
+
+  async function toggleFullscreen() {
+    if (fullscreenMode === "install") {
+      requestInstallHelp();
+      return;
+    }
+    await toggleDocumentFullscreen();
   }
 
   // Focus mode: hides the nav sidebar and the control bar, leaving only the
@@ -746,6 +779,7 @@ export default function BookReaderPage() {
           <div className={styles.bookTitle}>{book.title}</div>
           <div className={styles.topActions}>
             <button
+              className={styles.desktopOnly}
               onClick={() => setShowSearch(true)}
               aria-label="Search"
               title="Search"
@@ -758,6 +792,7 @@ export default function BookReaderPage() {
             </button>
             <Link
               href={`/book/${book.id}/highlights`}
+              className={styles.desktopOnly}
               aria-label="Highlights"
               title="Highlights"
               onTouchStart={() => handleTouchStart("Highlights")}
@@ -776,7 +811,8 @@ export default function BookReaderPage() {
               onTouchEnd={handleTouchEnd}
               onTouchCancel={handleTouchEnd}
             >
-              {isCurrentPageBookmarked ? "★" : "☆"}
+              <span className={styles.actionIcon}>{isCurrentPageBookmarked ? "★" : "☆"}</span>
+              <span className={styles.desktopText}>{isCurrentPageBookmarked ? "Bookmarked" : "Bookmark"}</span>
             </button>
             <button
               onClick={() => setShowSettings(true)}
@@ -786,17 +822,20 @@ export default function BookReaderPage() {
               onTouchEnd={handleTouchEnd}
               onTouchCancel={handleTouchEnd}
             >
-              Aa
+              <span className={styles.actionIcon}>Aa</span>
+              <span className={styles.desktopText}>Display</span>
             </button>
             <button
               onClick={toggleFullscreen}
+              style={fullscreenMode === "hidden" ? { display: "none" } : undefined}
               aria-label="Toggle fullscreen"
               title="Toggle fullscreen"
               onTouchStart={() => handleTouchStart(isFullscreen ? "Exit fullscreen" : "Enter fullscreen")}
               onTouchEnd={handleTouchEnd}
               onTouchCancel={handleTouchEnd}
             >
-              {isFullscreen ? "⤡" : "⛶"}
+              <span className={styles.actionIcon}>{isFullscreen ? "⤡" : "⛶"}</span>
+              <span className={styles.desktopText}>{isFullscreen ? "Exit full" : "Fullscreen"}</span>
             </button>
             <button
               onClick={() => setFocusMode(true)}
@@ -807,9 +846,10 @@ export default function BookReaderPage() {
               onTouchCancel={handleTouchEnd}
             >
               <span className={styles.desktopText}>Focus</span>
-              <span className={styles.mobileIcon}>👁</span>
+              <FocusIcon className={styles.mobileIcon} />
             </button>
             <button
+              className={styles.desktopOnly}
               onClick={() => setShowInfoModal(true)}
               aria-label="App features guide"
               title="App features guide"
@@ -817,8 +857,65 @@ export default function BookReaderPage() {
               onTouchEnd={handleTouchEnd}
               onTouchCancel={handleTouchEnd}
             >
-              ℹ
+              <span className={styles.actionIcon}>ℹ</span>
+              <span className={styles.desktopText}>Guide</span>
             </button>
+            <div className={styles.moreMenuWrap}>
+              <button
+                className={showMoreMenu ? styles.moreMenuOpen : ""}
+                onClick={() => setShowMoreMenu((open) => !open)}
+                aria-label="More options"
+                aria-haspopup="menu"
+                aria-expanded={showMoreMenu}
+                title="More options"
+              >
+                ⋯
+              </button>
+              {showMoreMenu && (
+                <>
+                  <div
+                    className={styles.moreMenuBackdrop}
+                    onClick={() => setShowMoreMenu(false)}
+                    aria-hidden
+                  />
+                  <div className={styles.moreMenu} role="menu">
+                    <button
+                      className={styles.moreMenuItem}
+                      role="menuitem"
+                      onClick={() => {
+                        setShowMoreMenu(false);
+                        setShowSearch(true);
+                      }}
+                    >
+                      <span className={styles.moreMenuIcon}>🔍</span>
+                      Search
+                    </button>
+                    <Link
+                      href={`/book/${book.id}/highlights`}
+                      className={styles.moreMenuItem}
+                      role="menuitem"
+                      onClick={() => setShowMoreMenu(false)}
+                    >
+                      <span className={styles.moreMenuIcon}>
+                        <HighlightIcon />
+                      </span>
+                      Highlights
+                    </Link>
+                    <button
+                      className={styles.moreMenuItem}
+                      role="menuitem"
+                      onClick={() => {
+                        setShowMoreMenu(false);
+                        setShowInfoModal(true);
+                      }}
+                    >
+                      <span className={styles.moreMenuIcon}>ℹ</span>
+                      App guide
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </div>
       )}

@@ -4,7 +4,8 @@
   align-items: center;
   justify-content: center;
   background: radial-gradient(circle at 30% 20%, var(--color-navy) 0%, var(--color-navy-dark) 70%);
-  padding: 40px 24px;
+  padding: calc(40px + var(--safe-top)) calc(24px + var(--safe-right)) calc(40px + var(--safe-bottom))
+    calc(24px + var(--safe-left));
 }
 
 .container {
@@ -12,6 +13,7 @@
   width: 100%;
   max-width: 880px;
   background: rgba(255, 255, 255, 0.03);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
   backdrop-filter: blur(16px) saturate(180%);
   border: 1px solid rgba(243, 238, 224, 0.08);
   border-radius: var(--radius-lg);
@@ -169,6 +171,17 @@
   transition: background-color 5000s ease-in-out 0s;
 }
 
+.hint {
+  font-family: var(--font-ui);
+  font-size: 0.72rem;
+  color: var(--color-ink-soft);
+  transition: color 0.15s ease;
+}
+
+.hintMet {
+  color: #2f7d4f;
+}
+
 .submit {
   width: 100%;
   background: var(--color-gold);
@@ -209,6 +222,99 @@
 .switch a {
   color: var(--color-ribbon);
   text-decoration: underline;
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 26px 0 14px;
+  font-family: var(--font-ui);
+  font-size: 0.72rem;
+  color: var(--color-ink-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.divider::before,
+.divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--color-paper-dark);
+}
+
+.signupButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  background: var(--color-navy);
+  color: var(--color-paper);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  font-family: var(--font-ui);
+  font-weight: 600;
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  text-decoration: none;
+  box-shadow: 0 4px 12px rgba(12, 22, 38, 0.18);
+  transition: background 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+}
+
+.signupButton:hover {
+  background: var(--color-navy-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(12, 22, 38, 0.28);
+}
+
+.signupButton:focus-visible {
+  outline: 2px solid var(--color-gold);
+  outline-offset: 2px;
+}
+
+.signupArrow {
+  color: var(--color-gold);
+  transition: transform 0.2s ease;
+}
+
+.signupButton:hover .signupArrow {
+  transform: translateX(3px);
+}
+
+.installAppButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  margin-top: 10px;
+  background: transparent;
+  color: var(--color-navy);
+  border: 1px dashed rgba(31, 53, 84, 0.45);
+  border-radius: var(--radius-sm);
+  padding: 11px;
+  font-family: var(--font-ui);
+  font-weight: 600;
+  font-size: 0.82rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.installAppButton:hover,
+.installAppButton:active {
+  background: rgba(31, 53, 84, 0.06);
+  border-color: var(--color-navy);
+}
+
+.installAppIcon {
+  width: 18px;
+  height: 18px;
+  color: var(--color-gold);
 }
 
 .passwordContainer {
@@ -345,5 +451,15 @@
     color: var(--color-ink-soft);
     text-transform: uppercase;
     letter-spacing: 0.08em;
+  }
+}
+
+@media (max-width: 480px) {
+  .page {
+    padding-left: calc(16px + var(--safe-left));
+    padding-right: calc(16px + var(--safe-right));
+  }
+  .card {
+    padding: 28px 20px;
   }
 }

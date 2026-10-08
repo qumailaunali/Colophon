@@ -2,6 +2,8 @@
   display: flex;
   min-height: 100dvh;
   background: var(--color-navy-dark);
+  /* Keep content clear of the iPhone notch/status bar and landscape edges. */
+  padding: var(--safe-top) var(--safe-right) 0 var(--safe-left);
 }
 
 .main {

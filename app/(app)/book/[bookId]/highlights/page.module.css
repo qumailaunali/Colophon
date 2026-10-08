@@ -9,7 +9,10 @@
     padding: 14px 20px 60px;
   }
   .backLink {
-    margin-left: 60px;
+    margin-left: 56px;
+    min-height: 38px;
+    display: inline-flex;
+    align-items: center;
   }
 }
 
@@ -17,7 +20,9 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 8px;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
 }
 
 .header h1 {
@@ -125,4 +130,30 @@
 .cardActions a:hover,
 .cardActions button:hover {
   text-decoration: underline;
+}
+
+@media (max-width: 640px) {
+  .page {
+    padding: 14px 16px 40px;
+  }
+  .header h1 {
+    font-size: 1.35rem;
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+  }
+  .exportButton {
+    width: 100%;
+    min-height: 44px;
+  }
+  .card {
+    padding: 14px 14px 12px;
+  }
+  .cardActions {
+    gap: 4px 18px;
+    flex-wrap: wrap;
+  }
+  .cardActions a,
+  .cardActions button {
+    padding: 8px 0;
+  }
 }

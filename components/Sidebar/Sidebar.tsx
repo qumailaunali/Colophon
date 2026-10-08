@@ -25,6 +25,10 @@ export function Sidebar() {
     { href: "/settings", label: "Settings" },
   ];
 
+  if (email === "qumailaunali@gmail.com") {
+    navLinks.push({ href: "/admin/users", label: "Users" });
+  }
+
   if (bookId) {
     navLinks.push({ href: `/book/${bookId}/bookmarks`, label: "Bookmarks" });
   }

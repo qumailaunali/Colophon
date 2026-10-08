@@ -23,6 +23,12 @@
   --radius-md: 8px;
   --radius-lg: 14px;
   --shadow-card: 0 2px 10px rgba(21, 37, 64, 0.18);
+
+  /* Notch / home-indicator insets (non-zero on iPhone with viewport-fit=cover). */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
 }
 
 [data-reader-theme="sepia"] {
@@ -50,11 +56,33 @@ body {
   height: 100%;
 }
 
+html {
+  background: var(--color-navy-dark);
+  /* Stop iOS Safari enlarging text when rotated to landscape. */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
 body {
   background: var(--color-navy-dark);
   color: var(--color-ink);
   font-family: var(--font-ui);
   -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Solid strip behind the translucent iOS status bar so scrolled content
+ * never shows through under the clock/battery. Zero height elsewhere. */
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--safe-top);
+  background: var(--color-navy-dark);
+  z-index: 9999;
+  pointer-events: none;
 }
 
 h1,
@@ -80,6 +108,15 @@ select {
   font-family: var(--font-ui);
 }
 
+/* iOS Safari zooms the page when focusing a field under 16px. */
+@supports (-webkit-touch-callout: none) {
+  input:not([type="range"]):not([type="checkbox"]):not([type="radio"]),
+  textarea,
+  select {
+    font-size: max(16px, 1em) !important;
+  }
+}
+
 ::selection {
   background: var(--color-gold);
   color: var(--color-ink);
@@ -91,8 +128,11 @@ select {
   cursor: pointer;
 }
 
-.sentence:hover {
-  background-color: rgba(201, 162, 39, 0.18);
+/* Hover only on real pointers: on touch screens :hover sticks after a tap. */
+@media (hover: hover) {
+  .sentence:hover {
+    background-color: rgba(201, 162, 39, 0.18);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

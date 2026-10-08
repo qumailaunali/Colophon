@@ -1,19 +1,31 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useState, useSyncExternalStore, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { isMobileDevice, isStandaloneApp, requestInstall } from "@/lib/pwa";
 import styles from "./AuthForm.module.css";
+
+const MIN_SIGNUP_PASSWORD_LENGTH = 8;
+
+const subscribeNoop = () => () => {};
 
 export function AuthForm({ mode }: { mode: "login" | "signup" }) {
   const router = useRouter();
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [verificationSent, setVerificationSent] = useState(false);
+  // Client-only check: phones/tablets that aren't already running the installed app.
+  const canOfferInstall = useSyncExternalStore(
+    subscribeNoop,
+    () => isMobileDevice() && !isStandaloneApp(),
+    () => false
+  );
 
   async function handleGuestLogin() {
     setError(null);
@@ -45,6 +57,18 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
+
+    if (mode === "signup") {
+      if (!name.trim()) {
+        setError("Please enter your name.");
+        return;
+      }
+      if (password.length < MIN_SIGNUP_PASSWORD_LENGTH) {
+        setError(`Password must be at least ${MIN_SIGNUP_PASSWORD_LENGTH} characters.`);
+        return;
+      }
+    }
+
     setLoading(true);
     const supabase = createClient();
 
@@ -60,7 +84,7 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
           const res = await fetch("/api/auth/signup", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email, password }),
+            body: JSON.stringify({ name: name.trim(), email, password }),
           });
           if (res.ok) {
             apiSuccess = true;
@@ -78,7 +102,11 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
           if (signInErr) throw signInErr;
         } else {
           // Standard signup fallback
-          const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({ email, password });
+          const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({
+            email,
+            password,
+            options: { data: { full_name: name.trim() } },
+          });
           if (signUpErr) throw signUpErr;
 
           // If no session was returned, they must confirm their email
@@ -200,6 +228,21 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
           <form onSubmit={handleSubmit}>
             {error && <div className={styles.error}>{error}</div>}
 
+            {mode === "signup" && (
+              <div className={styles.field}>
+                <label htmlFor="name">Name</label>
+                <input
+                  id="name"
+                  type="text"
+                  autoComplete="name"
+                  required
+                  maxLength={100}
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
+              </div>
+            )}
+
             <div className={styles.field}>
               <label htmlFor="email">Email</label>
               <input
@@ -220,7 +263,8 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
                   type={showPassword ? "text" : "password"}
                   autoComplete={mode === "login" ? "current-password" : "new-password"}
                   required
-                  minLength={6}
+                  minLength={mode === "signup" ? MIN_SIGNUP_PASSWORD_LENGTH : undefined}
+                  aria-describedby={mode === "signup" ? "password-hint" : undefined}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
@@ -265,6 +309,17 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
                   )}
                 </button>
               </div>
+              {mode === "signup" && (
+                <span
+                  id="password-hint"
+                  className={`${styles.hint} ${
+                    password.length >= MIN_SIGNUP_PASSWORD_LENGTH ? styles.hintMet : ""
+                  }`}
+                >
+                  {password.length >= MIN_SIGNUP_PASSWORD_LENGTH ? "✓ " : ""}
+                  At least {MIN_SIGNUP_PASSWORD_LENGTH} characters
+                </span>
+              )}
             </div>
 
             <button className={styles.submit} type="submit" disabled={loading}>
@@ -291,13 +346,41 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
             <span>🎴 3D Flashcards</span>
           </div>
 
-          <div className={styles.switch}>
-            {mode === "login" ? (
-              <>No account yet? <Link href="/signup">Sign up</Link></>
-            ) : (
-              <>Already have an account? <Link href="/login">Log in</Link></>
-            )}
-          </div>
+          {mode === "login" ? (
+            <>
+              <div className={styles.divider}>
+                <span>New to Colophon?</span>
+              </div>
+              <Link href="/signup" className={styles.signupButton}>
+                Create an account
+                <span className={styles.signupArrow} aria-hidden>→</span>
+              </Link>
+              {canOfferInstall && (
+                <button type="button" className={styles.installAppButton} onClick={requestInstall}>
+                  <svg
+                    className={styles.installAppIcon}
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <rect x="6" y="2" width="12" height="20" rx="2.5" />
+                    <path d="M12 7v7" />
+                    <path d="m9 11 3 3 3-3" />
+                    <path d="M10.5 18.5h3" />
+                  </svg>
+                  Install the app
+                </button>
+              )}
+            </>
+          ) : (
+            <div className={styles.switch}>
+              Already have an account? <Link href="/login">Log in</Link>
+            </div>
+          )}
         </div>
       </div>
     </div>

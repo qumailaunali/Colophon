@@ -67,7 +67,7 @@ export function ImportBookModal({ onClose }: ImportBookModalProps) {
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
         <div className={styles.header}>
           <h2>Browse and Download Ebooks</h2>
-          <button className={styles.closeButton} onClick={onClose}>✕</button>
+          <button className={styles.closeButton} onClick={onClose} aria-label="Close">✕</button>
         </div>
 
         <div className={styles.body}>

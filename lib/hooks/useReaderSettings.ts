@@ -17,9 +17,22 @@ export interface ReaderSettingsState {
   ttsProvider: TtsProviderKind;
 }
 
+// Default reader font size per device class, used until the reader picks
+// their own size. Tablet/mobile share the 1024px breakpoint used by the
+// reader's top bar.
+export const DEFAULT_FONT_SIZE_DESKTOP = 20;
+export const DEFAULT_FONT_SIZE_MOBILE = 17;
+
+export function getDefaultFontSize(): number {
+  if (typeof window === "undefined") return DEFAULT_FONT_SIZE_DESKTOP;
+  return window.matchMedia("(max-width: 1024px)").matches
+    ? DEFAULT_FONT_SIZE_MOBILE
+    : DEFAULT_FONT_SIZE_DESKTOP;
+}
+
 export const DEFAULT_READER_SETTINGS: ReaderSettingsState = {
   fontFamily: "Literata",
-  fontSize: 18,
+  fontSize: DEFAULT_FONT_SIZE_DESKTOP,
   lineSpacing: 1.6,
   theme: "paper",
   voiceName: "en-US-AvaNeural",
@@ -36,6 +49,8 @@ export function useReaderSettings() {
 
   useEffect(() => {
     let cancelled = false;
+    // Apply the device-appropriate default before saved settings arrive.
+    setSettings((prev) => ({ ...prev, fontSize: getDefaultFontSize() }));
     (async () => {
       const { data } = await supabase.from("reader_settings").select("*").maybeSingle();
       if (cancelled) return;

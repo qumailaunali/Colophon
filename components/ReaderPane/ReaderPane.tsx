@@ -91,6 +91,12 @@ export const ReaderPane = forwardRef<ReaderPaneHandle, ReaderPaneProps>(function
   const longPressTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const touchStartPosRef = useRef<{ x: number; y: number } | null>(null);
 
+  // Touch screens (iOS especially) select text with native handles and never
+  // fire mouseup afterwards, so on touch we watch `selectionchange` and offer
+  // a small Highlight/Define toolbar instead of the mouse long-press timer.
+  const lastPointerWasTouchRef = useRef(false);
+  const [touchSelection, setTouchSelection] = useState<SelectionCommit | null>(null);
+
   const cancelLongPressTimer = useCallback(() => {
     if (longPressTimeoutRef.current) {
       clearTimeout(longPressTimeoutRef.current);
@@ -118,6 +124,8 @@ export const ReaderPane = forwardRef<ReaderPaneHandle, ReaderPaneProps>(function
 
   const handleMouseDown = (e: React.MouseEvent) => {
     if (e.button !== 0) return;
+    // Taps on touch screens also emit a synthetic mousedown; skip those.
+    if (lastPointerWasTouchRef.current) return;
     startLongPressTimer(e.clientX, e.clientY);
   };
 
@@ -313,27 +321,46 @@ export const ReaderPane = forwardRef<ReaderPaneHandle, ReaderPaneProps>(function
   function handleMouseUp() {
     cancelLongPressTimer();
     touchStartPosRef.current = null;
+    if (lastPointerWasTouchRef.current) return; // handled by the touch toolbar
 
-    const sel = window.getSelection();
-    if (!sel || sel.isCollapsed || !sel.toString().trim()) return;
-    const anchorEl = (sel.anchorNode?.parentElement)?.closest("[data-sentence-index]");
-    const focusEl = (sel.focusNode?.parentElement)?.closest("[data-sentence-index]");
-    if (!anchorEl || !focusEl) return;
-    const a = Number(anchorEl.getAttribute("data-sentence-index"));
-    const b = Number(focusEl.getAttribute("data-sentence-index"));
-    onSelectionCommit({
-      start: Math.min(a, b),
-      end: Math.max(a, b),
-      text: sel.toString().trim(),
-    });
+    const selection = readReaderSelection(columnsRef.current);
+    if (selection) onSelectionCommit(selection);
+  }
+
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const handleSelectionChange = () => {
+      if (!lastPointerWasTouchRef.current) return;
+      clearTimeout(timer);
+      // Let the selection settle while the user drags the handles.
+      timer = setTimeout(() => setTouchSelection(readReaderSelection(columnsRef.current)), 150);
+    };
+    document.addEventListener("selectionchange", handleSelectionChange);
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener("selectionchange", handleSelectionChange);
+    };
+  }, []);
+
+  function commitTouchHighlight() {
+    if (!touchSelection) return;
+    onSelectionCommit(touchSelection);
+    window.getSelection()?.removeAllRanges();
+    setTouchSelection(null);
+  }
+
+  function lookupTouchWord() {
+    if (!touchSelection) return;
+    onWordLookup?.(touchSelection.text);
+    window.getSelection()?.removeAllRanges();
+    setTouchSelection(null);
   }
 
   // Touch swipe navigation.
   const touchStartX = useRef<number | null>(null);
   function handleTouchStart(e: React.TouchEvent) {
+    lastPointerWasTouchRef.current = true;
     touchStartX.current = e.touches[0].clientX;
-    const t = e.touches[0];
-    startLongPressTimer(t.clientX, t.clientY);
   }
   function handleTouchMove(e: React.TouchEvent) {
     if (!touchStartPosRef.current) return;
@@ -358,6 +385,9 @@ export const ReaderPane = forwardRef<ReaderPaneHandle, ReaderPaneProps>(function
     const delta = e.changedTouches[0].clientX - touchStartX.current;
     touchStartX.current = null;
     if (Math.abs(delta) < 50) return;
+    // A drag that ends with text selected was a selection, not a page swipe.
+    const sel = window.getSelection();
+    if (sel && !sel.isCollapsed) return;
     if (delta < 0) {
       const next = currentPageRef.current + 1;
       if (next < pageCountRef.current) {
@@ -380,6 +410,9 @@ export const ReaderPane = forwardRef<ReaderPaneHandle, ReaderPaneProps>(function
       ref={viewportRef}
       className={styles.viewport}
       data-reader-theme={theme}
+      onPointerDown={(e) => {
+        lastPointerWasTouchRef.current = e.pointerType !== "mouse";
+      }}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
@@ -416,9 +449,51 @@ export const ReaderPane = forwardRef<ReaderPaneHandle, ReaderPaneProps>(function
         <div ref={overlayHostRef} className={styles.overlayHost} />
       </div>
       <RibbonBookmark progress={pageCount > 0 ? (currentPage + 1) / pageCount : 0} />
+      {touchSelection && (
+        <div className={styles.selectionToolbar} role="toolbar" aria-label="Selection actions">
+          <button
+            type="button"
+            className={styles.selectionAction}
+            // Keep the native selection alive while tapping the toolbar.
+            onPointerDown={(e) => e.preventDefault()}
+            onClick={commitTouchHighlight}
+          >
+            <span className={styles.selectionSwatch} aria-hidden /> Highlight
+          </button>
+          {onWordLookup && SINGLE_WORD.test(touchSelection.text) && (
+            <button
+              type="button"
+              className={styles.selectionAction}
+              onPointerDown={(e) => e.preventDefault()}
+              onClick={lookupTouchWord}
+            >
+              📖 Define
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 });
+
+const SINGLE_WORD = /^[\p{L}\p{N}'’-]{2,}$/u;
+
+/** The current text selection mapped to sentence indices, if it lies in the reader. */
+function readReaderSelection(columns: HTMLElement | null): SelectionCommit | null {
+  const sel = window.getSelection();
+  if (!columns || !sel || sel.isCollapsed || !sel.toString().trim()) return null;
+  if (!sel.anchorNode || !columns.contains(sel.anchorNode)) return null;
+  const anchorEl = sel.anchorNode.parentElement?.closest("[data-sentence-index]");
+  const focusEl = sel.focusNode?.parentElement?.closest("[data-sentence-index]");
+  if (!anchorEl || !focusEl) return null;
+  const a = Number(anchorEl.getAttribute("data-sentence-index"));
+  const b = Number(focusEl.getAttribute("data-sentence-index"));
+  return {
+    start: Math.min(a, b),
+    end: Math.max(a, b),
+    text: sel.toString().trim(),
+  };
+}
 
 function getWordAtPoint(x: number, y: number): string | null {
   let range: Range | null = null;

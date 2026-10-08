@@ -11,11 +11,15 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json().catch(() => null);
+  const name = typeof body?.name === "string" ? body.name.trim() : "";
   const email = body?.email;
   const password = body?.password;
 
-  if (!email || !password) {
-    return NextResponse.json({ error: "Missing email or password" }, { status: 400 });
+  if (!name || !email || !password) {
+    return NextResponse.json({ error: "Missing name, email or password" }, { status: 400 });
+  }
+  if (typeof password !== "string" || password.length < 8) {
+    return NextResponse.json({ error: "Password must be at least 8 characters." }, { status: 400 });
   }
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -29,6 +33,7 @@ export async function POST(request: Request) {
       email,
       password,
       email_confirm: true, // Auto-confirm email so no verification is sent!
+      user_metadata: { full_name: name.slice(0, 100) },
     });
 
     if (error) {

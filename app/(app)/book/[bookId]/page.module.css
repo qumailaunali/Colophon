@@ -1,7 +1,10 @@
 .bookPage {
   display: flex;
   flex-direction: column;
-  height: 100dvh;
+  /* The app shell already pads the top safe area; pad the bottom here so
+   * the control bar and reader sit above the iPhone home indicator. */
+  height: calc(100dvh - var(--safe-top));
+  padding-bottom: var(--safe-bottom);
 }
 
 .topBar {
@@ -71,6 +74,134 @@
   display: none;
 }
 
+/* Desktop: wider pill buttons showing an icon plus a text label so each
+ * action is self-explanatory. Tablet/mobile keep their icon-only layout. */
+@media (min-width: 1025px) {
+  .topActions button,
+  .topActions a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-width: 96px;
+    padding: 8px 16px;
+    text-decoration: none;
+  }
+
+  .actionIcon {
+    font-size: 1rem;
+    line-height: 1;
+    text-transform: none;
+  }
+
+  .topActions .mobileIcon {
+    display: inline-block;
+    width: 1rem;
+    height: 1rem;
+    font-size: 0.95rem;
+    line-height: 1;
+  }
+}
+
+/* "More" menu: only shown on tablet/mobile, where Search, Highlights and the
+ * app guide move out of the crowded top bar into this popup. */
+.moreMenuWrap {
+  display: none;
+  position: relative;
+}
+
+.topActions .moreMenuOpen {
+  background: rgba(243, 238, 224, 0.2);
+  border-color: rgba(243, 238, 224, 0.35);
+}
+
+.moreMenuBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+}
+
+.moreMenu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 71;
+  min-width: 190px;
+  display: flex;
+  flex-direction: column;
+  padding: 6px;
+  background: var(--color-navy-dark);
+  border: 1px solid rgba(243, 238, 224, 0.18);
+  border-radius: var(--radius-md);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+  animation: moreMenuIn 0.14s ease-out;
+}
+
+@keyframes moreMenuIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.topActions .moreMenuItem {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 12px;
+  width: 100%;
+  background: none;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 11px 12px;
+  color: var(--color-paper);
+  font-family: var(--font-ui);
+  font-size: 0.88rem;
+  text-transform: none;
+  letter-spacing: normal;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.topActions .moreMenuItem:hover,
+.topActions .moreMenuItem:focus-visible {
+  background: rgba(243, 238, 224, 0.1);
+}
+
+.moreMenuIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  font-size: 1.05rem;
+  flex-shrink: 0;
+}
+
+.moreMenuIcon svg {
+  width: 100%;
+  height: 100%;
+}
+
+@media (max-width: 1024px) {
+  .topActions .desktopOnly {
+    display: none;
+  }
+  .moreMenuWrap {
+    display: flex;
+    flex: 1;
+  }
+  .moreMenuWrap > button {
+    flex: 1;
+  }
+}
+
 .readerArea {
   flex: 1;
   min-height: 0;
@@ -86,8 +217,8 @@
 
 .exitFocusButton {
   position: fixed;
-  top: 14px;
-  right: 14px;
+  top: calc(14px + var(--safe-top));
+  right: calc(14px + var(--safe-right));
   z-index: 50;
   width: 36px;
   height: 36px;
@@ -105,8 +236,8 @@
 
 .focusPlayButton {
   position: fixed;
-  bottom: 18px;
-  right: 18px;
+  bottom: calc(18px + var(--safe-bottom));
+  right: calc(18px + var(--safe-right));
   z-index: 50;
   width: 44px;
   height: 44px;
@@ -265,14 +396,6 @@
   cursor: pointer;
 }
 
-/* Leave room for the fixed hamburger button (Sidebar) that overlaps this
- * bar's left edge once the sidebar becomes an off-canvas drawer. */
-@media (max-width: 900px) {
-  .topBar {
-    padding-left: 60px;
-  }
-}
-
 /* Tablet & Mobile: hide book title, stretch the icons to take all available space,
  * and increase font size for touch friendliness. */
 @media (max-width: 1024px) {
@@ -292,13 +415,15 @@
   }
   .backLink {
     font-size: 1.25rem;
-    padding: 10px 14px;
+    height: 42px;
+    padding: 0 14px;
     display: flex;
     align-items: center;
     justify-content: center;
+    flex-shrink: 0;
   }
   .topBar {
-    padding: 10px 16px 10px 56px;
+    padding: 12px 16px 10px;
     gap: 16px;
   }
   .topActions {
@@ -313,8 +438,18 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    padding: 10px 0;
+    height: 42px;
+    padding: 0;
     font-size: 1.15rem;
+  }
+}
+
+/* The fixed hamburger (Sidebar) sits at top 14px, left 14px, 38px square
+ * once the sidebar becomes an off-canvas drawer. Clear it horizontally and
+ * centre the bar's 42px controls on it (12px + 21px = 14px + 19px). */
+@media (max-width: 900px) {
+  .topBar {
+    padding-left: 64px;
   }
 }
 
@@ -322,14 +457,16 @@
  * phone-width viewports: tighter chrome, smaller side turn-buttons (swipe
  * already pages the reader on touch devices). */
 @media (max-width: 640px) {
+  /* 38px controls starting 14px down line up exactly with the hamburger. */
   .topBar {
-    padding: 8px 10px 8px 48px;
+    padding: 14px 10px 8px 60px;
     gap: 8px;
   }
 
   .backLink {
     font-size: 1.1rem;
-    padding: 8px 12px;
+    height: 38px;
+    padding: 0 12px;
   }
 
   .topActions {
@@ -338,7 +475,8 @@
 
   .topActions button,
   .topActions a {
-    padding: 8px 0;
+    height: 38px;
+    padding: 0;
     font-size: 1.05rem;
   }
 
@@ -376,7 +514,7 @@
 
 .tooltipToast {
   position: fixed;
-  top: 66px; /* directly below the top bar */
+  top: calc(66px + var(--safe-top)); /* directly below the top bar */
   left: 50%;
   transform: translateX(-50%);
   background: rgba(21, 37, 64, 0.95);
@@ -407,8 +545,8 @@
 
 .aiButton {
   position: fixed;
-  bottom: 70px;
-  right: 24px;
+  bottom: calc(70px + var(--safe-bottom));
+  right: calc(24px + var(--safe-right));
   width: 44px;
   height: 44px;
   border-radius: 50%;
@@ -445,6 +583,7 @@
   position: fixed;
   inset: 0;
   background: rgba(12, 22, 38, 0.45);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
   backdrop-filter: blur(12px) saturate(180%);
   display: flex;
   align-items: center;
@@ -456,6 +595,7 @@
 
 .aiWindow {
   background: rgba(21, 37, 64, 0.75);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
   backdrop-filter: blur(20px) saturate(180%);
   border: 1px solid rgba(243, 238, 224, 0.18);
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.15);
@@ -793,6 +933,7 @@
   position: fixed;
   inset: 0;
   background: rgba(12, 22, 38, 0.45);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
   backdrop-filter: blur(12px) saturate(180%);
   display: flex;
   align-items: center;
@@ -804,6 +945,7 @@
 
 .infoCard {
   background: rgba(21, 37, 64, 0.85);
+  -webkit-backdrop-filter: blur(25px) saturate(180%);
   backdrop-filter: blur(25px) saturate(180%);
   border: 1px solid rgba(243, 238, 224, 0.18);
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.15);
@@ -1089,4 +1231,24 @@
   cursor: not-allowed;
 }
 
-
+/* Phone-width popups: use the full width, tighter padding, never taller
+ * than the screen. */
+@media (max-width: 640px) {
+  .settingsOverlay,
+  .aiWindowOverlay,
+  .infoOverlay {
+    padding: 12px;
+  }
+  .settingsCard {
+    padding: 20px 16px;
+    max-height: calc(100dvh - 24px);
+    overflow-y: auto;
+  }
+  .aiWindow,
+  .infoCard {
+    width: 100%;
+    height: 88dvh;
+    padding: 20px 16px;
+    gap: 12px;
+  }
+}

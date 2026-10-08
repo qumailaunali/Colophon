@@ -1,4 +1,5 @@
 import type { TTSProvider, TTSSpeakCallbacks, TTSUtteranceOptions, TTSVoice } from "./TTSProvider";
+import { getSharedAudioElement } from "./iosAudio";
 
 function mediaErrorName(code: number | undefined): string {
   switch (code) {
@@ -263,7 +264,10 @@ export class EdgeSpeechProvider implements TTSProvider {
 
   private async playAudioUrl(url: string, options: TTSUtteranceOptions, existingAudio?: HTMLAudioElement): Promise<void> {
     await new Promise<void>((resolve, reject) => {
-      const audio = existingAudio || new Audio(url);
+      // On iOS, play through the gesture-unlocked shared element (see iosAudio.ts).
+      const shared = getSharedAudioElement();
+      const audio = shared ?? existingAudio ?? new Audio(url);
+      if (shared) shared.src = url;
       audio.playbackRate = options.rate;
       audio.volume = Math.min(1, Math.max(0, options.volume));
       this.audio = audio;

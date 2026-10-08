@@ -1,0 +1,45 @@
+name: Supabase Keep Alive
+
+# Supabase pauses Free Plan projects after a period of inactivity.
+# Run a trivial query once a day so the database sees regular activity.
+on:
+  schedule:
+    - cron: "0 0 * * *" # 00:00 UTC daily
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  keep-alive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Install PostgreSQL client
+        run: |
+          if command -v psql >/dev/null 2>&1; then
+            echo "psql already available: $(psql --version)"
+          else
+            sudo apt-get update
+            sudo apt-get install -y postgresql-client
+          fi
+
+      - name: Ping Supabase database
+        env:
+          DATABASE_URL: ${{ secrets.SUPABASE_DATABASE_URL }}
+          PGCONNECT_TIMEOUT: "15"
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "::error::Secret SUPABASE_DATABASE_URL is not set. Add it under Settings > Secrets and variables > Actions."
+            exit 1
+          fi
+
+          case "$DATABASE_URL" in
+            *@db.*.supabase.co*)
+              echo "::error::SUPABASE_DATABASE_URL uses the direct connection host (db.<ref>.supabase.co), which is IPv6-only and unreachable from GitHub runners. Use the Session pooler connection string instead."
+              exit 1
+              ;;
+          esac
+
+          psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -tA -c "SELECT 1;"
+          echo "Supabase database responded successfully at $(date -u +%Y-%m-%dT%H:%M:%SZ)."

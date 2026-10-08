@@ -27,5 +27,7 @@ export function downloadTextFile(filename: string, content: string) {
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  // Safari (notably iOS) starts the download asynchronously; revoking the
+  // URL immediately cancels it.
+  setTimeout(() => URL.revokeObjectURL(url), 60_000);
 }

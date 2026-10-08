@@ -1,0 +1,358 @@
+.page {
+  padding: 32px 40px 60px;
+  max-width: 1100px;
+  margin: 0 auto;
+  font-family: var(--font-ui);
+}
+
+.header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.header h1 {
+  color: var(--color-paper);
+  font-size: 1.8rem;
+  margin: 6px 0 4px;
+}
+
+.backLink {
+  font-size: 0.78rem;
+  color: rgba(243, 238, 224, 0.55);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.backLink:hover {
+  color: var(--color-gold);
+}
+
+.subtitle {
+  margin: 0;
+  font-size: 0.85rem;
+  color: rgba(243, 238, 224, 0.55);
+}
+
+.refreshButton,
+.retryButton {
+  background: rgba(201, 162, 39, 0.12);
+  border: 1px solid rgba(201, 162, 39, 0.3);
+  color: var(--color-gold);
+  border-radius: var(--radius-sm);
+  padding: 8px 16px;
+  font-family: var(--font-ui);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, opacity 0.2s;
+}
+
+.refreshButton:hover:not(:disabled),
+.retryButton:hover {
+  background: rgba(201, 162, 39, 0.22);
+}
+
+.refreshButton:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* Stats */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.statCard {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(243, 238, 224, 0.07);
+  border-radius: var(--radius-md);
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.statValue {
+  font-family: var(--font-display);
+  font-size: 1.7rem;
+  color: var(--color-gold);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.statLabel {
+  font-size: 0.72rem;
+  color: rgba(243, 238, 224, 0.55);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Toolbar */
+.toolbar {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.search,
+.sortSelect {
+  background: rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(243, 238, 224, 0.1);
+  border-radius: var(--radius-sm);
+  color: var(--color-paper);
+  font-family: var(--font-ui);
+  font-size: 0.85rem;
+  padding: 9px 12px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.search {
+  flex: 1;
+  min-width: 0;
+}
+
+.search:focus,
+.sortSelect:focus {
+  border-color: rgba(201, 162, 39, 0.5);
+}
+
+.sortSelect option {
+  background: #152540;
+}
+
+/* Table */
+.table {
+  border: 1px solid rgba(243, 238, 224, 0.07);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: minmax(0, 2.4fr) 1fr 1fr 70px 96px;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 18px;
+  border-bottom: 1px solid rgba(243, 238, 224, 0.05);
+  transition: background 0.15s;
+}
+
+.row:last-child {
+  border-bottom: none;
+}
+
+.row:not(.headRow):hover {
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.headRow {
+  background: rgba(255, 255, 255, 0.03);
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: rgba(243, 238, 224, 0.5);
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+.userCell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.avatar {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(201, 162, 39, 0.15);
+  color: var(--color-gold);
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.userText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.nameRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.name {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--color-paper);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.email {
+  font-size: 0.76rem;
+  color: rgba(243, 238, 224, 0.55);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.adminBadge {
+  flex-shrink: 0;
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-gold);
+  border: 1px solid rgba(201, 162, 39, 0.4);
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+
+.cell {
+  font-size: 0.8rem;
+  color: rgba(243, 238, 224, 0.7);
+}
+
+.numCol {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.actionCell {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.deleteButton {
+  background: rgba(220, 38, 38, 0.12);
+  border: 1px solid rgba(220, 38, 38, 0.3);
+  color: #ef4444;
+  border-radius: var(--radius-sm);
+  padding: 6px 14px;
+  font-family: var(--font-ui);
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, opacity 0.2s;
+}
+
+.deleteButton:hover:not(:disabled) {
+  background: rgba(220, 38, 38, 0.22);
+}
+
+.deleteButton:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.empty,
+.errorBox {
+  padding: 40px 24px;
+  text-align: center;
+  color: rgba(243, 238, 224, 0.45);
+  font-size: 0.85rem;
+  border: 1px dashed rgba(243, 238, 224, 0.1);
+  border-radius: var(--radius-md);
+}
+
+.errorBox {
+  color: #ef4444;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+@media (max-width: 900px) {
+  .page {
+    padding: 14px 20px 60px;
+  }
+  .titleBlock .backLink {
+    margin-left: 56px;
+    min-height: 38px;
+    display: inline-flex;
+    align-items: center;
+  }
+  .stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .headRow {
+    display: none;
+  }
+  .row {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 12px;
+    padding: 14px 16px;
+  }
+  .userCell {
+    grid-column: 1 / -1;
+  }
+  .cell::before {
+    content: attr(data-label);
+    display: block;
+    font-size: 0.64rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: rgba(243, 238, 224, 0.4);
+    margin-bottom: 2px;
+  }
+  .numCol {
+    text-align: left;
+  }
+  .actionCell {
+    justify-content: flex-start;
+  }
+  .toolbar {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 640px) {
+  .page {
+    padding: 14px 16px 40px;
+  }
+  .header h1 {
+    font-size: 1.5rem;
+  }
+  .refreshButton {
+    width: 100%;
+    min-height: 44px;
+  }
+  .stats {
+    gap: 10px;
+  }
+  .statCard {
+    padding: 12px 14px;
+  }
+  .search,
+  .sortSelect {
+    min-height: 44px;
+  }
+}

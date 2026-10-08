@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReaderSettingsState } from "@/lib/hooks/useReaderSettings";
+import { getDefaultFontSize, type ReaderSettingsState } from "@/lib/hooks/useReaderSettings";
 import type { ReaderTheme } from "@/lib/supabase/types";
 import styles from "./SettingsPanel.module.css";
 
@@ -33,7 +33,7 @@ export function SettingsPanel({ settings, onChange }: SettingsPanelProps) {
           onClick={() =>
             onChange({
               fontFamily: "Literata",
-              fontSize: 18,
+              fontSize: getDefaultFontSize(),
               lineSpacing: 1.6,
             })
           }

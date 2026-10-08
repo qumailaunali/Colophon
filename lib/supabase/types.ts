@@ -88,6 +88,13 @@ export type OpenLibraryBookRow = {
   created_at: string;
 };
 
+export type ProfileRow = {
+  id: string;
+  full_name: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
 export type Database = {
   public: {
     Tables: {
@@ -131,6 +138,13 @@ export type Database = {
         Row: OpenLibraryBookRow;
         Insert: Omit<OpenLibraryBookRow, "id" | "created_at"> & { id?: string };
         Update: Partial<Omit<OpenLibraryBookRow, "id">>;
+        Relationships: [];
+      };
+      profiles: {
+        Row: ProfileRow;
+        // Rows are created by the on_auth_user_created trigger, not the app.
+        Insert: never;
+        Update: Pick<ProfileRow, "full_name">;
         Relationships: [];
       };
     };
