@@ -37,10 +37,206 @@
   margin-bottom: 12px;
 }
 
-.status {
-  margin-top: 14px;
-  font-size: 0.8rem;
+/* Drop zone: the whole area is a <label> for the hidden file input. */
+.dropZone {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 210px;
+  padding: 26px 18px;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.55);
+  border: 2px dashed rgba(31, 53, 84, 0.28);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: border-color 0.18s ease, background 0.18s ease, transform 0.18s ease;
+}
+
+@media (hover: hover) {
+  .dropZone:hover {
+    border-color: var(--color-gold);
+    background: rgba(201, 162, 39, 0.06);
+  }
+}
+
+.dropZone:focus-within {
+  outline: 3px solid rgba(201, 162, 39, 0.45);
+  outline-offset: 2px;
+}
+
+.dropZoneActive {
+  border-color: var(--color-gold);
+  border-style: solid;
+  background: rgba(201, 162, 39, 0.12);
+  transform: scale(1.01);
+}
+
+.dropZoneBusy,
+.dropZoneBusy:hover {
+  cursor: default;
+  border-style: solid;
+  border-color: var(--color-paper-dark);
+  background: rgba(255, 255, 255, 0.55);
+}
+
+/* Visually hidden but still focusable and opened via the label. */
+.fileInput {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  overflow: hidden;
+}
+
+.dropIcon {
+  width: 44px;
+  height: 44px;
+  color: var(--color-navy);
+  transition: transform 0.18s ease, color 0.18s ease;
+}
+
+.dropZoneActive .dropIcon {
+  color: var(--color-gold);
+  transform: translateY(-2px);
+}
+
+@media (hover: hover) {
+  .dropZone:hover .dropIcon {
+    color: var(--color-gold);
+    transform: translateY(-2px);
+  }
+  .dropZone:hover .chooseButton {
+    background: var(--color-navy-dark);
+  }
+}
+
+.dropTitle {
+  margin: 4px 0 0;
+  font-family: var(--font-ui);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-ink);
+}
+
+.dropOr {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
   color: var(--color-ink-soft);
+}
+
+.chooseButton {
+  display: inline-flex;
+  align-items: center;
+  background: var(--color-navy);
+  color: var(--color-paper);
+  border-radius: var(--radius-sm);
+  padding: 10px 22px;
+  font-family: var(--font-ui);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  box-shadow: 0 3px 10px rgba(21, 37, 64, 0.2);
+  transition: background 0.18s ease;
+}
+
+.dropMeta {
+  margin-top: 2px;
+  font-size: 0.7rem;
+  color: var(--color-ink-soft);
+}
+
+/* Touch screens can't drag files in: say "Tap to choose" instead. */
+.touchText {
+  display: none;
+}
+
+@media (hover: none) {
+  .pointerText {
+    display: none;
+  }
+  .touchText {
+    display: inline;
+  }
+}
+
+/* Upload progress shown inside the zone */
+.progressBlock {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+}
+
+.spinner {
+  width: 30px;
+  height: 30px;
+  margin-bottom: 4px;
+  border: 3px solid var(--color-paper-dark);
+  border-top-color: var(--color-gold);
+  border-radius: 50%;
+  animation: uploadSpin 0.8s linear infinite;
+}
+
+@keyframes uploadSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.progressLabel {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-ink);
+}
+
+.progressFile {
+  margin: 0;
+  max-width: 100%;
+  font-size: 0.75rem;
+  color: var(--color-ink-soft);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.progressTrack {
+  width: 100%;
+  max-width: 260px;
+  height: 6px;
+  margin-top: 6px;
+  background: var(--color-paper-dark);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background: var(--color-gold);
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+.skipped {
+  margin: 10px 0 0;
+  font-size: 0.75rem;
+  color: var(--color-ink-soft);
+  overflow-wrap: anywhere;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation-duration: 2.4s;
+  }
+  .dropZoneActive {
+    transform: none;
+  }
 }
 
 .actions {
