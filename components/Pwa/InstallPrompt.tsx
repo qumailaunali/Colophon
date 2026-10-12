@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { isIOSDevice } from "@/lib/tts/iosAudio";
 import { INSTALL_EVENT, isStandaloneApp, SHOW_INSTALL_HELP_EVENT } from "@/lib/pwa";
 import styles from "./InstallPrompt.module.css";
@@ -16,6 +17,10 @@ type Variant = "native" | "ios" | "manual";
 
 const DISMISSED_KEY = "colophon_install_dismissed";
 const IOS_SHOW_DELAY_MS = 2500;
+// Only offer install unprompted on the library. Elsewhere the banner would sit
+// on top of Log in / Continue as Guest or the reader controls on short phones
+// (e.g. iPhone 11 Pro); those pages have their own Install/Fullscreen buttons.
+const AUTO_SHOW_PATHS = ["/library"];
 
 function wasDismissed(): boolean {
   try {
@@ -48,6 +53,10 @@ function AddToHomeIcon() {
 export function InstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [variant, setVariant] = useState<Variant | null>(null);
+  // Auto-shown banners appear only on AUTO_SHOW_PATHS; ones the reader
+  // asked for (Install / Fullscreen buttons) always show.
+  const [requested, setRequested] = useState(false);
+  const pathname = usePathname();
 
   useEffect(() => {
     if (isStandaloneApp()) return;
@@ -72,11 +81,13 @@ export function InstallPrompt() {
     const handleAppInstalled = () => {
       promptEvent = null;
       setVariant(null);
+      setRequested(false);
       setDeferredPrompt(null);
     };
 
     // Triggered by features that work best installed (e.g. Fullscreen on iPhone).
     const handleShowHelp = () => {
+      setRequested(true);
       setVariant(promptEvent ? "native" : ios ? "ios" : "manual");
     };
 
@@ -101,7 +112,9 @@ export function InstallPrompt() {
     window.addEventListener(INSTALL_EVENT, handleInstall);
 
     // iOS never fires beforeinstallprompt, so show the instructions ourselves.
-    const iosTimer = ios && autoShow ? window.setTimeout(() => setVariant("ios"), IOS_SHOW_DELAY_MS) : undefined;
+    const iosTimer = ios && autoShow
+      ? window.setTimeout(() => setVariant((current) => current ?? "ios"), IOS_SHOW_DELAY_MS)
+      : undefined;
 
     return () => {
       window.clearTimeout(iosTimer);
@@ -118,10 +131,12 @@ export function InstallPrompt() {
     await deferredPrompt.userChoice;
     setDeferredPrompt(null);
     setVariant(null);
+    setRequested(false);
   };
 
   const handleDismissClick = () => {
     setVariant(null);
+    setRequested(false);
     try {
       sessionStorage.setItem(DISMISSED_KEY, "true");
     } catch {
@@ -130,6 +145,7 @@ export function InstallPrompt() {
   };
 
   if (!variant) return null;
+  if (!requested && !AUTO_SHOW_PATHS.includes(pathname ?? "")) return null;
 
   return (
     <div className={styles.promptBanner} role="dialog" aria-labelledby="install-title">

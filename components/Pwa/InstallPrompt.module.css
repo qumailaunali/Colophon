@@ -5,6 +5,12 @@
   transform: translateX(-50%);
   width: calc(100% - 32px);
   max-width: 480px;
+  /* Short phones (iPhone SE/11 Pro): keep "Got it" on screen, scroll the rest. */
+  max-height: calc(100vh - 48px - var(--safe-top) - var(--safe-bottom));
+  max-height: calc(100dvh - 48px - var(--safe-top) - var(--safe-bottom));
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
   background: var(--color-navy);
   color: var(--color-paper);
   border: 1px solid rgba(243, 238, 224, 0.15);
