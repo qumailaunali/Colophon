@@ -13,6 +13,10 @@ const PUBLIC_PATHS = [
 ];
 
 export async function updateSession(request: NextRequest) {
+  // Email confirmation must reach its handler before a session exists.
+  if (request.nextUrl.pathname === "/auth/confirm") {
+    return NextResponse.next({ request });
+  }
   let response = NextResponse.next({ request });
 
   const supabase = createServerClient(

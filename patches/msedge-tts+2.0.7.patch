@@ -1,0 +1,66 @@
+diff --git a/node_modules/msedge-tts/dist/MsEdgeTTS.js b/node_modules/msedge-tts/dist/MsEdgeTTS.js
+index b1bc3b0..ee8f86e 100644
+--- a/node_modules/msedge-tts/dist/MsEdgeTTS.js
++++ b/node_modules/msedge-tts/dist/MsEdgeTTS.js
+@@ -92,17 +92,24 @@ class MsEdgeTTS {
+         this._enableLogger = options?.enableLogger || false;
+         this._isBrowser = typeof window !== "undefined" && typeof window.document !== "undefined";
+     }
+-    static async getSynthUrl() {
++    static async getSynthUrl(useAlternate = false) {
+         const req_id = MsEdgeTTS.generateUUID(); // Generate the request ID
+         const secMsGEC = await MsEdgeTTS.generateSecMsGec(this.TRUSTED_CLIENT_TOKEN);
+-        return `${this.WSS_URL}?TrustedClientToken=${this.TRUSTED_CLIENT_TOKEN}&Sec-MS-GEC=${secMsGEC}&Sec-MS-GEC-Version=1-143.0.3650.96&ConnectionId=${req_id}`;
++        const endpoint = useAlternate ? "wss://api.msedgeservices.com/tts/cognitiveservices/websocket/v1" : this.WSS_URL;
++        const tokenParameter = useAlternate ? "Ocp-Apim-Subscription-Key" : "TrustedClientToken";
++        return `${endpoint}?${tokenParameter}=${this.TRUSTED_CLIENT_TOKEN}&Sec-MS-GEC=${secMsGEC}&Sec-MS-GEC-Version=1-143.0.3650.75&ConnectionId=${req_id.replace(/-/g, "")}`;
+     }
+-    async _initClient() {
+-        const synthUrl = await MsEdgeTTS.getSynthUrl();
++    async _initClient(retried = false) {
++        const synthUrl = await MsEdgeTTS.getSynthUrl(retried);
+         const options = {
++            handshakeTimeout: 10000,
+             headers: {
+                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0",
+-                "Origin": "chrome-extension://jdiccldimpdaibmpdkjnbmckianbfold"
++                "Origin": "chrome-extension://jdiccldimpdaibmpdkjnbmckianbfold",
++                "Accept-Language": "en-US,en;q=0.9",
++                "Cache-Control": "no-cache",
++                "Pragma": "no-cache",
++                "Cookie": `muid=${crypto.randomUUID().replace(/-/g, "").toUpperCase()};`
+             }
+         };
+         this._ws = this._isBrowser
+@@ -110,6 +117,22 @@ class MsEdgeTTS {
+             : new isomorphic_ws_1.default(synthUrl, { ...options, agent: this._agent });
+         this._ws.binaryType = "arraybuffer";
+         return new Promise((resolve, reject) => {
++            if (!this._isBrowser) {
++                const socket = this._ws;
++                socket.on("unexpected-response", (_request, response) => {
++                    const serverTime = Date.parse(response.headers.date || "");
++                    response.resume();
++                    socket.onerror = () => {};
++                    socket.onclose = () => {};
++                    socket.terminate();
++                    if (response.statusCode === 403 && !retried) {
++                        if (Number.isFinite(serverTime)) MsEdgeTTS.clockSkewMs = serverTime - Date.now();
++                        this._initClient(true).then(resolve, reject);
++                    } else {
++                        reject(new Error(`Edge TTS WebSocket handshake failed (HTTP ${response.statusCode})`));
++                    }
++                });
++            }
+             this._ws.onopen = () => {
+                 this._log("Connected in", (Date.now() - this._startTime) / 1000, "seconds");
+                 this._send(`Content-Type:application/json; charset=utf-8\r\nPath:${messageTypes.SPEECH_CONFIG}${MsEdgeTTS.JSON_XML_DELIM}
+@@ -198,7 +221,7 @@ class MsEdgeTTS {
+         });
+     }
+     static async generateSecMsGec(trustedClientToken) {
+-        const ticks = Math.floor(Date.now() / 1000) + 11644473600;
++        const ticks = Math.floor((Date.now() + (MsEdgeTTS.clockSkewMs || 0)) / 1000) + 11644473600;
+         const rounded = ticks - (ticks % 300);
+         const windowsTicks = rounded * 10000000;
+         const encoder = new TextEncoder();

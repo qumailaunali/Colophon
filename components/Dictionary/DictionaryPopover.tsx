@@ -111,6 +111,7 @@ export function DictionaryPopover({ word, onClose }: DictionaryPopoverProps) {
     const phoneticWithAudio = entry.phonetics.find((p) => p.audio);
     if (phoneticWithAudio?.audio) {
       const audio = new Audio(phoneticWithAudio.audio);
+      audio.setAttribute("playsinline", "");
       audio.play().catch(() => {
         speakWordFallback(entry.word);
       });

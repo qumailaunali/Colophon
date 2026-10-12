@@ -1,5 +1,5 @@
 import type { TTSProvider, TTSSpeakCallbacks, TTSUtteranceOptions, TTSVoice } from "./TTSProvider";
-import { getSharedAudioElement } from "./iosAudio";
+import { getSharedAudioElement, playAudioElement } from "./iosAudio";
 
 function mediaErrorName(code: number | undefined): string {
   switch (code) {
@@ -324,7 +324,7 @@ export class EdgeSpeechProvider implements TTSProvider {
         audio.onerror = null;
         reject(new Error(`Edge audio playback failed (${mediaErrorName(audio.error?.code)})`));
       };
-      audio.play().catch(reject);
+      playAudioElement(audio, this.abortController?.signal).catch(reject);
     });
   }
 

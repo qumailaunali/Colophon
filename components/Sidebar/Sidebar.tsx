@@ -39,7 +39,11 @@ export function Sidebar() {
   }, []);
 
   useEffect(() => {
-    setCollapsed(window.localStorage.getItem(COLLAPSED_STORAGE_KEY) === "true");
+    try {
+      setCollapsed(window.localStorage.getItem(COLLAPSED_STORAGE_KEY) === "true");
+    } catch {
+      // Keep the default when Safari blocks persistent storage.
+    }
   }, []);
 
   useEffect(() => {
@@ -49,7 +53,11 @@ export function Sidebar() {
   function toggleCollapsed() {
     setCollapsed((prev) => {
       const next = !prev;
-      window.localStorage.setItem(COLLAPSED_STORAGE_KEY, String(next));
+      try {
+        window.localStorage.setItem(COLLAPSED_STORAGE_KEY, String(next));
+      } catch {
+        // Collapsing still works for this session.
+      }
       return next;
     });
   }

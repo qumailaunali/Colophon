@@ -76,6 +76,7 @@ export default function BookReaderPage() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [focusMode, setFocusMode] = useState(false);
   const [isMusicPlaying, setIsMusicPlaying] = useState(false);
+  const [musicError, setMusicError] = useState<string | null>(null);
   const ambientAudioRef = useRef<HTMLAudioElement | null>(null);
 
   const toggleMusic = () => {
@@ -85,6 +86,7 @@ export default function BookReaderPage() {
       const audio = new Audio("/Music/Relaxing Music l Piano and Rain Sound 30 Minutes - 3D City Wiew.mp3");
       audio.loop = true;
       audio.volume = 0.45;
+      audio.setAttribute("playsinline", "");
       ambientAudioRef.current = audio;
     }
 
@@ -92,9 +94,10 @@ export default function BookReaderPage() {
       ambientAudioRef.current.pause();
       setIsMusicPlaying(false);
     } else {
+      setMusicError(null);
       ambientAudioRef.current.play()
         .then(() => setIsMusicPlaying(true))
-        .catch((err) => console.error("Failed to play ambient music:", err));
+        .catch(() => setMusicError("Music could not start. Tap to play to try again."));
     }
   };
 
@@ -942,12 +945,23 @@ export default function BookReaderPage() {
       )}
 
       <div className={`${styles.readerArea} ${focusMode ? styles.readerAreaFocus : ""}`}>
-        {ttsController.lastError && (
+        {(ttsController.lastError || ttsController.needsAudioTap) && (
           <div className={styles.ttsErrorBanner}>
-            <span>Read-aloud error: {ttsController.lastError}</span>
-            <button onClick={ttsController.clearError} aria-label="Dismiss">
+            <span>{ttsController.needsAudioTap ? "Safari needs a tap to start read-aloud." : `Read-aloud error: ${ttsController.lastError}`}</span>
+            <button onClick={() => ttsController.play()}>Tap to play</button>
+            <button onClick={() => {
+              if (ttsController.needsAudioTap) ttsController.pause();
+              ttsController.clearError();
+            }} aria-label="Dismiss">
               ✕
             </button>
+          </div>
+        )}
+        {musicError && (
+          <div className={styles.ttsErrorBanner} role="status">
+            <span>{musicError}</span>
+            <button onClick={toggleMusic}>Tap to play</button>
+            <button onClick={() => setMusicError(null)} aria-label="Dismiss music error">×</button>
           </div>
         )}
         <div className={styles.paginationRow}>

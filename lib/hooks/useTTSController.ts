@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getTTSProvider } from "@/lib/tts/getTTSProvider";
-import { unlockSharedAudioElement } from "@/lib/tts/iosAudio";
+import { AUDIO_TAP_EVENT, retryPendingAudio, unlockSharedAudioElement } from "@/lib/tts/iosAudio";
 import type { TTSProvider, TTSVoice } from "@/lib/tts/TTSProvider";
 import type { EpubChapter } from "@/lib/epub/types";
 import type { ReaderSettingsState } from "./useReaderSettings";
@@ -39,6 +39,16 @@ export function useTTSController({ settings, onSentenceChange, onChapterEnd }: U
   const settingsRef = useRef(settings);
   const [voices, setVoices] = useState<TTSVoice[]>([]);
   const [lastError, setLastError] = useState<string | null>(null);
+  const [needsAudioTap, setNeedsAudioTap] = useState(false);
+
+  useEffect(() => {
+    const onTapNeeded = (event: Event) => setNeedsAudioTap(Boolean((event as CustomEvent<boolean>).detail));
+    window.addEventListener(AUDIO_TAP_EVENT, onTapNeeded);
+    return () => {
+      window.removeEventListener(AUDIO_TAP_EVENT, onTapNeeded);
+      providerRef.current.stop();
+    };
+  }, []);
 
   useEffect(() => {
     settingsRef.current = settings;
@@ -99,7 +109,9 @@ export function useTTSController({ settings, onSentenceChange, onChapterEnd }: U
           setPlaying(false);
           const message = error instanceof Error ? error.message : String(error);
           console.error("[TTS] speak failed:", error);
-          setLastError(message);
+          setLastError(error instanceof Error && error.name === "NotAllowedError"
+            ? "Safari blocked audio playback. Tap to play to try again."
+            : message);
         },
       }
     );
@@ -134,6 +146,7 @@ export function useTTSController({ settings, onSentenceChange, onChapterEnd }: U
 
   const play = useCallback(
     (chapter?: EpubChapter, sentenceIndex?: number) => {
+      if (!chapter && sentenceIndex == null && retryPendingAudio()) return;
       if (chapter) chapterRef.current = chapter;
       if (sentenceIndex != null) sentenceIndexRef.current = sentenceIndex;
       if (!chapterRef.current) return;
@@ -170,6 +183,7 @@ export function useTTSController({ settings, onSentenceChange, onChapterEnd }: U
     isPlayingRef,
     voices,
     lastError,
+    needsAudioTap,
     clearError,
     play,
     pause,
