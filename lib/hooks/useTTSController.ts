@@ -39,6 +39,7 @@ export function useTTSController({ settings, onSentenceChange, onChapterEnd }: U
   const settingsRef = useRef(settings);
   const [voices, setVoices] = useState<TTSVoice[]>([]);
   const [lastError, setLastError] = useState<string | null>(null);
+  const [isVoiceBusy, setIsVoiceBusy] = useState(false);
   const [needsAudioTap, setNeedsAudioTap] = useState(false);
 
   useEffect(() => {
@@ -105,8 +106,10 @@ export function useTTSController({ settings, onSentenceChange, onChapterEnd }: U
           sentenceIndexRef.current += 1;
           speakCurrentImpl();
         },
+        onStatus: (status) => setIsVoiceBusy(status === "busy"),
         onError: (error) => {
           setPlaying(false);
+          setIsVoiceBusy(false);
           const message = error instanceof Error ? error.message : String(error);
           console.error("[TTS] speak failed:", error);
           setLastError(error instanceof Error && error.name === "NotAllowedError"
@@ -116,11 +119,14 @@ export function useTTSController({ settings, onSentenceChange, onChapterEnd }: U
       }
     );
 
-    // Prefetch the next 2 speakable sentences if the provider supports it
+    // Prefetch upcoming speakable sentences if the provider supports it.
+    // Edge gets 5: it only fetches when its lookahead runs low, then grabs
+    // the missing ones in one batch request (one connection to Microsoft).
     if (providerRef.current.prefetch) {
+      const lookahead = settingsRef.current.ttsProvider === "edge" ? 5 : 2;
       let indexOffset = 1;
       let prefetchedCount = 0;
-      while (prefetchedCount < 2) {
+      while (prefetchedCount < lookahead) {
         let nextIndex = sentenceIndexRef.current + indexOffset;
         let nextSentence = chapter.sentences.find((s) => s.index === nextIndex);
         if (!nextSentence) break;
@@ -162,11 +168,13 @@ export function useTTSController({ settings, onSentenceChange, onChapterEnd }: U
   const pause = useCallback(() => {
     providerRef.current.stop();
     setPlaying(false);
+    setIsVoiceBusy(false);
   }, []);
 
   const stop = useCallback(() => {
     providerRef.current.stop();
     setPlaying(false);
+    setIsVoiceBusy(false);
     sentenceIndexRef.current = 0;
     if (chapterRef.current) onSentenceChange(chapterRef.current.spineIndex, 0);
   }, [onSentenceChange]);
@@ -183,6 +191,7 @@ export function useTTSController({ settings, onSentenceChange, onChapterEnd }: U
     isPlayingRef,
     voices,
     lastError,
+    isVoiceBusy,
     needsAudioTap,
     clearError,
     play,

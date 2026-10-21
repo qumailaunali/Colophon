@@ -13,6 +13,9 @@ export interface TTSUtteranceOptions {
 export interface TTSSpeakCallbacks {
   onEnd: () => void;
   onError: (error: unknown) => void;
+  /** "busy" while the provider waits out a rate limit before retrying the
+   * same sentence; null once audio is ready again. */
+  onStatus?: (status: "busy" | null) => void;
 }
 
 /**

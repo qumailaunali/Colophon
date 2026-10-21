@@ -27,3 +27,11 @@ The live baseline probe reproduced the user's 403. The alternate endpoint accept
 4. If Microsoft still refuses Vercel's requests, use the app's existing Azure provider with valid Azure credentials, or investigate availability from the deployed region. This change does not guarantee that either consumer endpoint will accept every hosting IP.
 
 For a fixed, non-private live test from a server with network access, run `node scripts/check-edge-tts.mjs`. It sends only a hard-coded test sentence and reports the number of MP3 bytes returned; it does not read `.env.local` or book contents.
+
+## Rate limiting (HTTP 429)
+
+Microsoft counts WebSocket handshakes per server IP. Playing one connection per sentence (plus prefetch) tripped its rate limit during long reading sessions.
+
+- `/api/tts/edge` also accepts `{ texts: string[] }` (1-5 sentences). They are synthesized sequentially over one connection and returned as `{ audios: (base64 MP3 | null)[] }`; if a later sentence fails, earlier audio is still returned.
+- `EdgeSpeechProvider` coalesces the controller's prefetch calls into one batch and only refills when one of the next 2 sentences is missing. In `scripts/edge-provider.test.mjs`, 50 sentences take 13 requests instead of ~50.
+- A handshake 429 is returned as HTTP 429 (`throttled: true`), not 502. The client pauses prefetching and retries the same sentence with exponential backoff and jitter (1s doubling, 30s cap, 6 retries, honoring `Retry-After` if present) while the reader shows "Voice service is busy — retrying…". The sentence cursor does not move.

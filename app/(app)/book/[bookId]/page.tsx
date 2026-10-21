@@ -957,6 +957,11 @@ export default function BookReaderPage() {
             </button>
           </div>
         )}
+        {ttsController.isVoiceBusy && !ttsController.lastError && !ttsController.needsAudioTap && (
+          <div className={styles.ttsErrorBanner} role="status">
+            <span>Voice service is busy — retrying…</span>
+          </div>
+        )}
         {musicError && (
           <div className={styles.ttsErrorBanner} role="status">
             <span>{musicError}</span>
