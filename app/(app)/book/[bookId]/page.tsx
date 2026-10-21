@@ -75,6 +75,8 @@ export default function BookReaderPage() {
   const [pageInfo, setPageInfo] = useState({ page: 0, pageCount: 1 });
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [focusMode, setFocusMode] = useState(false);
+  // True while the fullscreen session was started by entering focus mode.
+  const focusStartedFullscreenRef = useRef(false);
   const [isMusicPlaying, setIsMusicPlaying] = useState(false);
   const [musicError, setMusicError] = useState<string | null>(null);
   const ambientAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -405,7 +407,13 @@ export default function BookReaderPage() {
 
   useEffect(() => {
     function handleFullscreenChange() {
-      setIsFullscreen(!!getFullscreenElement());
+      const fullscreen = !!getFullscreenElement();
+      setIsFullscreen(fullscreen);
+      // Esc / system gesture left the fullscreen focus mode started: leave focus mode too.
+      if (!fullscreen && focusStartedFullscreenRef.current) {
+        focusStartedFullscreenRef.current = false;
+        setFocusMode(false);
+      }
     }
     document.addEventListener("fullscreenchange", handleFullscreenChange);
     document.addEventListener("webkitfullscreenchange", handleFullscreenChange);
@@ -442,8 +450,26 @@ export default function BookReaderPage() {
   }
 
   // Focus mode: hides the nav sidebar and the control bar, leaving only the
-  // reading pane. Independent of browser fullscreen — can be combined with
-  // it or used on its own.
+  // reading pane, and also enters browser fullscreen where supported (iPhone
+  // Safari has no Fullscreen API, so there it is focus mode alone). If focus
+  // mode turned fullscreen on, leaving either one leaves both.
+  function enterFocusMode() {
+    setFocusMode(true);
+    // Must run inside the tap: browsers only allow fullscreen from a gesture.
+    if (fullscreenMode === "native" && !getFullscreenElement()) {
+      focusStartedFullscreenRef.current = true;
+      void toggleDocumentFullscreen();
+    }
+  }
+
+  function exitFocusMode() {
+    setFocusMode(false);
+    if (focusStartedFullscreenRef.current) {
+      focusStartedFullscreenRef.current = false;
+      if (getFullscreenElement()) void toggleDocumentFullscreen();
+    }
+  }
+
   useEffect(() => {
     setSidebarHidden(focusMode);
   }, [focusMode, setSidebarHidden]);
@@ -843,7 +869,7 @@ export default function BookReaderPage() {
               <span className={styles.desktopText}>{isFullscreen ? "Exit full" : "Fullscreen"}</span>
             </button>
             <button
-              onClick={() => setFocusMode(true)}
+              onClick={enterFocusMode}
               aria-label="Focus mode"
               title="Focus mode: hide sidebar and controls"
               onTouchStart={() => handleTouchStart("Focus mode")}
@@ -929,7 +955,7 @@ export default function BookReaderPage() {
         <>
           <button
             className={styles.exitFocusButton}
-            onClick={() => setFocusMode(false)}
+            onClick={exitFocusMode}
             aria-label="Exit focus mode"
             title="Exit focus mode"
           >
