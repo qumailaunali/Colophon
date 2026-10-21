@@ -515,11 +515,13 @@ export default function BookReaderPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chapters, progressLoaded]);
 
-  // Jump to the right page whenever the visible chapter changes.
+  // Jump to the right page whenever the visible chapter changes. Instant:
+  // sliding from page 1 to e.g. the last page of the previous chapter looked
+  // like a second page turn right after the curl animation.
   useEffect(() => {
     const target = pendingPageJumpRef.current;
     const id = requestAnimationFrame(() => {
-      readerPaneRef.current?.goToSentencePage(target);
+      readerPaneRef.current?.goToSentencePage(target, { instant: true });
     });
     return () => cancelAnimationFrame(id);
   }, [currentSpineIndex]);

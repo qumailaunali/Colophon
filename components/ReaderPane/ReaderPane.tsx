@@ -30,7 +30,9 @@ export interface ReaderPaneHandle {
   /** Returns false if already at the first page (caller should go to previous chapter). */
   prevPage: () => boolean;
   goToPage: (page: number) => void;
-  goToSentencePage: (sentenceIndex: number) => void;
+  /** `instant` skips the slide transition, for jumps that aren't page turns
+   * (e.g. landing on the last page of the previous chapter). */
+  goToSentencePage: (sentenceIndex: number, options?: { instant?: boolean }) => void;
   getPageCount: () => number;
   getCurrentPage: () => number;
   getFirstSentenceOnPage: () => number;
@@ -246,7 +248,9 @@ export const ReaderPane = forwardRef<ReaderPaneHandle, ReaderPaneProps>(function
         const clamped = Math.max(0, Math.min(page, pageCountRef.current - 1));
         setPage(clamped);
       },
-      goToSentencePage: (sentenceIndex: number) => {
+      goToSentencePage: (sentenceIndex: number, options?: { instant?: boolean }) => {
+        // Re-enabled one frame later by the disableTransition effect.
+        if (options?.instant) setDisableTransition(true);
         setPage(getSentencePage(sentenceIndex));
       },
       getPageCount: () => pageCountRef.current,
