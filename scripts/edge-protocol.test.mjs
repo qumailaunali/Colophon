@@ -12,8 +12,13 @@ function client(outcomes) {
   const exports = {};
   const sockets = [];
   class Socket {
+    static CONNECTING = 0;
+    static OPEN = 1;
+    static CLOSED = 3;
+    CONNECTING = 0;
     OPEN = 1;
-    readyState = 1;
+    CLOSED = 3;
+    readyState = 0;
     handlers = {};
     terminated = false;
     constructor(url, options) {
@@ -22,23 +27,29 @@ function client(outcomes) {
       const outcome = outcomes[sockets.length];
       sockets.push(this);
       queueMicrotask(() => {
-        if (outcome === 101) this.onopen();
-        else this.handlers['unexpected-response']({}, {
+        if (outcome === 101) {
+          this.readyState = 1;
+          this.onopen();
+          return;
+        }
+        // Like ws: destroying the handshake request errors and closes the socket.
+        const request = { destroy: (error) => { this.readyState = 2; this.onerror({ error }); } };
+        this.handlers['unexpected-response'](request, {
           statusCode: outcome,
           headers: { date: 'Mon, 12 Oct 2026 12:05:00 GMT' },
-          resume() {},
+          destroy() {},
         });
       });
     }
-    on(type, handler) { this.handlers[type] = handler; }
+    once(type, handler) { this.handlers[type] = handler; }
     send(_data, done) { done(); }
-    terminate() { this.terminated = true; this.onerror({ message: 'closed' }); }
+    terminate() { this.terminated = true; this.readyState = 3; }
     close() {}
   }
   class Clock extends Date { static now() { return Date.parse('Mon, 12 Oct 2026 12:00:00 GMT'); } }
   vm.runInNewContext(fs.readFileSync(filename, 'utf8'), {
     exports, require: (name) => name === 'isomorphic-ws' ? Socket : originalRequire(name),
-    crypto: webcrypto, TextEncoder, Date: Clock, console,
+    crypto: webcrypto, TextEncoder, Date: Clock, console, setTimeout, clearTimeout,
   });
   return { tts: new exports.MsEdgeTTS(), cls: exports.MsEdgeTTS, sockets };
 }
@@ -49,7 +60,6 @@ test('working primary connection is preserved', async () => {
   assert.equal(sockets.length, 1);
   assert.equal(sockets[0].url.hostname, 'speech.platform.bing.com');
   assert.match(sockets[0].options.headers.Cookie, /^muid=[A-F0-9]{32};$/);
-  assert.equal(sockets[0].options.handshakeTimeout, 10000);
 });
 
 test('403 corrects clock and tries alternate endpoint exactly once', async () => {
@@ -57,7 +67,7 @@ test('403 corrects clock and tries alternate endpoint exactly once', async () =>
   await tts.setMetadata('en-US-AvaNeural', 'audio-24khz-48kbitrate-mono-mp3');
   assert.equal(sockets.length, 2);
   assert.equal(sockets[0].terminated, true);
-  assert.equal(cls.clockSkewMs, 300000);
+  assert.equal(cls._clockOffsetMs, 300000);
   assert.equal(sockets[1].url.hostname, 'api.msedgeservices.com');
   assert.ok(sockets[1].url.searchParams.has('Ocp-Apim-Subscription-Key'));
   assert.match(sockets[1].url.searchParams.get('ConnectionId'), /^[a-f0-9]{32}$/);

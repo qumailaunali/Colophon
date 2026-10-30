@@ -1,0 +1,74 @@
+diff --git a/node_modules/msedge-tts/dist/MsEdgeTTS.js b/node_modules/msedge-tts/dist/MsEdgeTTS.js
+index c6b5271..e7f9a88 100644
+--- a/node_modules/msedge-tts/dist/MsEdgeTTS.js
++++ b/node_modules/msedge-tts/dist/MsEdgeTTS.js
+@@ -106,10 +106,12 @@ class MsEdgeTTS {
+             }
+         }
+     }
+-    static async getSynthUrl() {
++    static async getSynthUrl(useAlternate = false) {
+         const req_id = MsEdgeTTS.generateUUID(); // Generate the request ID
+         const secMsGEC = await MsEdgeTTS.generateSecMsGec(this.TRUSTED_CLIENT_TOKEN);
+-        return `${this.WSS_URL}?TrustedClientToken=${this.TRUSTED_CLIENT_TOKEN}&Sec-MS-GEC=${secMsGEC}&Sec-MS-GEC-Version=2-143.0.3650.96&ConnectionId=${req_id}`;
++        const endpoint = useAlternate ? "wss://api.msedgeservices.com/tts/cognitiveservices/websocket/v1" : this.WSS_URL;
++        const tokenParameter = useAlternate ? "Ocp-Apim-Subscription-Key" : "TrustedClientToken";
++        return `${endpoint}?${tokenParameter}=${this.TRUSTED_CLIENT_TOKEN}&Sec-MS-GEC=${secMsGEC}&Sec-MS-GEC-Version=2-143.0.3650.96&ConnectionId=${req_id.replace(/-/g, "")}`;
+     }
+     _initClient() {
+         if (this._clientInit)
+@@ -122,7 +124,7 @@ class MsEdgeTTS {
+         this._clientInit = tracked;
+         return tracked;
+     }
+-    async _createClient(retryClock = true, deadline = this._connectionTimeoutMs ? Date.now() + this._connectionTimeoutMs : 0, generation = this._clientGeneration) {
++    async _createClient(retryClock = true, deadline = this._connectionTimeoutMs ? Date.now() + this._connectionTimeoutMs : 0, generation = this._clientGeneration, useAlternate = false) {
+         const previous = this._ws;
+         if (previous) {
+             if (previous.readyState === previous.OPEN
+@@ -134,7 +136,7 @@ class MsEdgeTTS {
+                 this._closeSocket(previous);
+             }
+         }
+-        const synthUrl = await MsEdgeTTS.getSynthUrl();
++        const synthUrl = await MsEdgeTTS.getSynthUrl(useAlternate);
+         if (generation !== this._clientGeneration)
+             throw new Error("Edge TTS connection closed before initialization completed.");
+         const remaining = deadline ? deadline - Date.now() : 0;
+@@ -143,7 +145,11 @@ class MsEdgeTTS {
+         const options = {
+             headers: {
+                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0",
+-                "Origin": "chrome-extension://jdiccldimpdaibmpdkjnbmckianbfold"
++                "Origin": "chrome-extension://jdiccldimpdaibmpdkjnbmckianbfold",
++                "Accept-Language": "en-US,en;q=0.9",
++                "Cache-Control": "no-cache",
++                "Pragma": "no-cache",
++                "Cookie": `muid=${crypto.randomUUID().replace(/-/g, "").toUpperCase()};`
+             }
+         };
+         const ws = this._ws = this._isBrowser
+@@ -164,7 +170,7 @@ class MsEdgeTTS {
+                         response.destroy();
+                         return;
+                     }
+-                    const error = Object.assign(new Error(`Unexpected server response: ${response.statusCode}`), {
++                    const error = Object.assign(new Error(`Edge TTS WebSocket handshake failed (HTTP ${response.statusCode})`), {
+                         statusCode: response.statusCode,
+                         serverDate: response.headers.date,
+                     });
+@@ -284,10 +290,11 @@ class MsEdgeTTS {
+         }).catch(error => {
+             const underlying = error.cause;
+             const serverTime = typeof underlying?.serverDate === "string" ? Date.parse(underlying.serverDate) : NaN;
+-            if (retryClock && underlying?.statusCode === 403 && Number.isFinite(serverTime)
++            if (retryClock && underlying?.statusCode === 403
+                 && generation === this._clientGeneration && (!deadline || Date.now() < deadline)) {
+-                MsEdgeTTS._clockOffsetMs = serverTime - Date.now();
+-                return this._createClient(false, deadline, generation);
++                if (Number.isFinite(serverTime))
++                    MsEdgeTTS._clockOffsetMs = serverTime - Date.now();
++                return this._createClient(false, deadline, generation, true);
+             }
+             throw error;
+         });
