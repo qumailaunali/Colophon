@@ -442,6 +442,19 @@
     padding: 0;
     font-size: 1.15rem;
   }
+  /* Normal reading mode on tablet/mobile: the ‹ › turn buttons go away —
+   * swipe (touch) and arrow keys still turn pages — so the pane takes
+   * their width, and tighter chrome stretches the page vertically. */
+  .turnButton {
+    display: none;
+  }
+  .paginationRow {
+    gap: 0;
+  }
+  .readerArea {
+    padding: 12px 16px;
+    gap: 8px;
+  }
 }
 
 /* The fixed hamburger (Sidebar) sits at top 14px, left 14px, 38px square
@@ -454,7 +467,7 @@
 }
 
 /* Reclaim as much of the screen as possible for the actual page content on
- * phone-width viewports: tighter chrome, smaller side turn-buttons (swipe
+ * phone-width viewports: tighter chrome, no side turn-buttons (swipe
  * already pages the reader on touch devices). */
 @media (max-width: 640px) {
   /* 38px controls starting 14px down line up exactly with the hamburger. */
@@ -485,18 +498,8 @@
   }
 
   .readerArea {
-    padding: 8px 10px;
-    gap: 8px;
-  }
-
-  .paginationRow {
+    padding: 6px 8px;
     gap: 6px;
-  }
-
-  .turnButton {
-    width: 16px;
-    height: 48px;
-    font-size: 1.3rem;
   }
 
   .readerPaneWrap {

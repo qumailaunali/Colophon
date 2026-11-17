@@ -11,9 +11,20 @@
   touch-action: pan-y;
 }
 
-@media (max-width: 640px) {
+/* Tablet: less book-margin padding so the page stretches wider and taller
+ * in normal reading mode (fullscreen/focus mode is untouched). */
+@media (max-width: 1024px) {
   .viewport {
-    padding: 20px 40px 20px 18px;
+    padding: 24px 44px 24px 28px;
+  }
+}
+
+@media (max-width: 640px) {
+  /* Phone: minimal top/bottom padding for more lines per page. The right
+   * side stays at 30px so text still clears the progress ribbon, which
+   * occupies the rightmost 26px (right 8px + 18px wide). */
+  .viewport {
+    padding: 12px 30px 12px 14px;
   }
 }
 
